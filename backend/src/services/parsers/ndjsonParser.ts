@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { AppError } from '../../utils/AppError';
+import { logger } from '../../utils/logger';
 
 /**
  * NDJSON Parser (Newline-Delimited JSON)
@@ -62,9 +63,7 @@ export const parseNDJSON = (filePath: string): Record<string, unknown>[] => {
 
     // Log warnings for skipped rows but don't fail
     if (errors.length > 0) {
-      // In a production system, you might want to track these
-      // eslint-disable-next-line no-console
-      console.warn(`NDJSON parser: Skipped ${errors.length} malformed rows`);
+      logger.warn(`NDJSON parser: Skipped ${errors.length} malformed rows`);
     }
 
     return logs;

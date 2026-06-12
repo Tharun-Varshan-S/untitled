@@ -37,6 +37,7 @@ export const errorMiddleware = (
 
   logger.error(`${req.method} ${req.originalUrl} ${statusCode} - ${message}`);
 
+  res.setHeader('Content-Type', 'application/json');
   res.status(statusCode).json({
     success: false,
     message,

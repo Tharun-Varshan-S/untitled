@@ -6,6 +6,8 @@ export interface UserDocument extends Document {
   name: string;
   email: string;
   passwordHash: string;
+  passwordResetToken?: string;
+  passwordResetTokenExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +30,14 @@ const userSchema = new Schema<UserDocument>(
     passwordHash: {
       type: String,
       required: true,
+      select: false,
+    },
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    passwordResetTokenExpires: {
+      type: Date,
       select: false,
     },
   },

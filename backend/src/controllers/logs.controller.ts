@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
+import { AppError } from '../utils/AppError';
 import { ingestLog, bulkIngestLogs, listLogs } from '../services/logs.service';
 import { validateBulkLogPayload, validateLogPayload } from '../validators/logs.validation';
 
 const getProjectIdFromRequest = (req: Request): string => {
   const project = req.project;
   if (!project?.id) {
-    throw new Error('Project context missing');
+    throw new AppError('Project context missing', 401, 'PROJECT_CONTEXT_MISSING');
   }
   return project.id;
 };
@@ -18,10 +19,10 @@ const parsePagination = (query: unknown): { page: number; limit: number; level?:
   const service = typeof data.service === 'string' && data.service.trim() ? data.service.trim() : undefined;
 
   if (Number.isNaN(page) || page < 1) {
-    throw new Error('Page must be a positive integer');
+    throw new AppError('Page must be a positive integer', 400, 'INVALID_PAGE');
   }
   if (Number.isNaN(limit) || limit < 1 || limit > 100) {
-    throw new Error('Limit must be between 1 and 100');
+    throw new AppError('Limit must be between 1 and 100', 400, 'INVALID_LIMIT');
   }
 
   return { page, limit, level, service };

@@ -4,6 +4,7 @@ import { hashApiKey, API_KEY_PREFIX } from '../utils/apiKey';
 import { findByHashedKey, updateLastUsedAt } from '../repositories/apiKey.repository';
 import ProjectModel from '../models/Project';
 import { auditLog } from '../utils/audit';
+import { logger } from '../utils/logger';
 
 export const authenticateApiKey = async (req: Request, res: Response, next: NextFunction) => {
   const header = (req.headers['x-api-key'] as string) || '';
@@ -31,6 +32,11 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
       return next(new AppError('API key revoked', 401, 'API_KEY_REVOKED'));
     }
 
+    if (record.expiresAt && new Date() > record.expiresAt) {
+      auditLog('EXPIRED_KEY_USAGE', { keyId: record._id.toString(), projectId: record.projectId.toString(), expiresAt: record.expiresAt.toISOString() });
+      return next(new AppError('API key expired', 401, 'API_KEY_EXPIRED'));
+    }
+
     // fetch project once and attach
     const project = await ProjectModel.findById(record.projectId).lean().exec();
     if (!project) {
@@ -40,28 +46,28 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
 
     // update lastUsedAt asynchronously (don't await to keep latency low)
     updateLastUsedAt(record._id.toString()).catch((err) => {
-      // log but don't block
-      // eslint-disable-next-line no-console
-      console.error('Failed to update api key lastUsedAt', err);
+      logger.error('Failed to update api key lastUsedAt', err);
     });
 
-    // attach to request
-    req.apiKey = {
+    // attach to request with proper typing
+    const apiKeyData: Express.Request['apiKey'] = {
       id: record._id.toString(),
       name: record.name,
       prefix: record.prefix,
       projectId: record.projectId.toString(),
       revoked: record.revoked,
-    } as any;
+    };
+    req.apiKey = apiKeyData;
 
-    req.project = {
+    const projectData: Express.Request['project'] = {
       id: project._id.toString(),
       name: project.name,
       description: project.description ?? '',
       ownerId: project.ownerId?.toString(),
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
-    } as any;
+    };
+    req.project = projectData;
 
     return next();
   } catch (err) {

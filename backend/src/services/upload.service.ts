@@ -1,6 +1,7 @@
 import { unlink } from 'fs/promises';
 import { Types } from 'mongoose';
 import { AppError } from '../utils/AppError';
+import { logger } from '../utils/logger';
 import { parseFile } from './parsers';
 import { validateLogPayload } from '../validators/logs.validation';
 import * as logsRepo from '../repositories/logs.repository';
@@ -101,8 +102,7 @@ export const uploadAndProcessLogs = async (
       await unlink(filePath);
     } catch (cleanupError) {
       // Log but don't throw
-      // eslint-disable-next-line no-console
-      console.error(`Failed to clean up temporary file ${filePath}:`, cleanupError);
+      logger.error(`Failed to clean up temporary file ${filePath}: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`);
     }
   }
 };

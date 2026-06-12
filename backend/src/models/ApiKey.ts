@@ -9,6 +9,7 @@ export interface ApiKeyDocument extends Document {
   lastUsedAt?: Date;
   revoked: boolean;
   revokedAt?: Date;
+  expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,7 @@ const apiKeySchema = new Schema<ApiKeyDocument>(
     lastUsedAt: { type: Date },
     revoked: { type: Boolean, default: false },
     revokedAt: { type: Date },
+    expiresAt: { type: Date, index: true },
   },
   {
     timestamps: true,
@@ -43,6 +45,8 @@ const apiKeySchema = new Schema<ApiKeyDocument>(
 // Ensure unique name per project
 apiKeySchema.index({ projectId: 1, name: 1 }, { unique: true, sparse: true });
 apiKeySchema.index({ hashedKey: 1 }, { unique: true });
+// TTL index: automatically delete expired keys (0 means delete immediately when expiresAt is reached)
+apiKeySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0, sparse: true });
 
 const ApiKeyModel = model<ApiKeyDocument>('ApiKey', apiKeySchema);
 export default ApiKeyModel;
