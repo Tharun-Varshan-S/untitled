@@ -7,8 +7,10 @@ export interface LogDocument extends Document {
   level: LogLevel;
   message: string;
   service: string;
-  metadata: Record<string, unknown>;
+  metadata?: Record<string, unknown> | undefined;
   timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const logSchema = new Schema<LogDocument>(
@@ -35,14 +37,16 @@ const logSchema = new Schema<LogDocument>(
     },
     metadata: {
       type: Schema.Types.Mixed,
-      default: {},
+      default: undefined,
     },
     timestamp: {
       type: Date,
-      default: Date.now,
+      default: () => new Date(),
+      index: true,
     },
   },
   {
+    timestamps: true,
     toJSON: {
       virtuals: true,
       transform: (_doc, ret) => {
@@ -55,10 +59,10 @@ const logSchema = new Schema<LogDocument>(
   }
 );
 
-logSchema.index({ projectId: 1, level: 1, timestamp: -1 });
-logSchema.index({ projectId: 1 });
-logSchema.index({ timestamp: -1 });
-logSchema.index({ level: 1 });
+logSchema.index({ projectId: 1, timestamp: -1 });
+logSchema.index({ projectId: 1, level: 1 });
+logSchema.index({ projectId: 1, service: 1 });
+logSchema.index({ projectId: 1, level: 1, service: 1, timestamp: -1 });
 
 const LogModel = model<LogDocument>('Log', logSchema);
 export default LogModel;

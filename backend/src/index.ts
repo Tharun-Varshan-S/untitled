@@ -1,19 +1,8 @@
 import http from 'http';
-import express, { Express } from 'express';
-import cors from 'cors';
 import { config } from './config/env';
 import { logger } from './utils/logger';
-import { registerRoutes } from './api';
-import { errorMiddleware } from './middleware/error.middleware';
+import app from './app';
 import { connectDB, disconnectDB } from './config/database';
-
-const app: Express = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-registerRoutes(app);
-app.use(errorMiddleware);
 
 const startServer = async (): Promise<http.Server> => {
   await connectDB();

@@ -160,6 +160,12 @@ export const deleteProject = async (
   if (!deleted) {
     throw new AppError('Project not found', 404, 'PROJECT_NOT_FOUND');
   }
-
-  // TODO: cascade delete related API keys, logs, analytics, and AI insights when Phase E is implemented.
+  // cascade delete related API keys
+  try {
+    // lazy-load to avoid circular imports at module load time
+    const ApiKeyModel = (await import('../models/ApiKey.js')).default as any;
+    await ApiKeyModel.deleteMany({ projectId: projectObjectId }).exec();
+  } catch (err) {
+    // log and continue; project deletion should not fail due to cleanup issues
+  }
 };

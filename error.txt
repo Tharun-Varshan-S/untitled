@@ -1639,3 +1639,230 @@ Dead code scan	1	—	⚠️ 1	isNonEmptyString unused
 TODO/incomplete code	1	—	⚠️ 1	Cascade delete not implemented
 ts-jest / Jest compatibility	1	—	❌ 1	ts-jest@29 incompatible with jest@30
 Total: 3 critical/high bugs · 5 security concerns · 6 code quality issues · tests cannot run (no test script/files)
+
+
+Data leakage risks:
+⚠️ getProjects uses countDocuments and find both scoped to ownerId — no cross-tenant leakage
+
+⚠️ No Log collection queries exist yet — when logs are added, they'll need the same projectId + ownership chain enforcement (Phase E concern, not Phase D)
+
+✅ No global/unscoped find({}) calls anywhere in project service
+
+Run the full test suite to check for any errors across all test files.
+
+shell
+
+Completed
+cd "/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend" && npx jest --config ./jest.config.cjs --runInBand 2>&1
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+PASS src/__tests__/apiKey.integration.test.ts
+  ● Console
+
+    console.log
+      ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      [2026-06-11 15:44:02] INFO Database connected
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:03] INFO Project created: 6a2a8a6b57e36a9b9c14b4f1 by user 6a2a8a6b57e36a9b9c14b4f0
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:03] INFO [AUDIT] API_KEY_CREATED {"id":"6a2a8a6b57e36a9b9c14b4f2","projectId":"6a2a8a6b57e36a9b9c14b4f1","createdBy":"6a2a8a6b57e36a9b9c14b4f0","name":"ingest-key"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:03] INFO API key created 6a2a8a6b57e36a9b9c14b4f2 for project 6a2a8a6b57e36a9b9c14b4f1 by user 6a2a8a6b57e36a9b9c14b4f0
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.error
+      Failed to update api key lastUsedAt MongoClientClosedError: Operation interrupted because client was closed
+          at ConnectionPool.closeCheckedOutConnections (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongodb/src/cmap/connection_pool.ts:486:20)
+          at Server.closeCheckedOutConnections (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongodb/src/sdam/server.ts:252:22)
+          at Topology.closeCheckedOutConnections (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongodb/src/sdam/topology.ts:495:21)
+          at MongoClient._close (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongodb/src/mongo_client.ts:768:20)
+          at MongoClient.close (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongodb/src/mongo_client.ts:750:29)
+          at NativeConnection.doClose (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongoose/lib/drivers/node-mongodb-native/connection.js:205:21)
+          at NativeConnection._close (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongoose/lib/connection.js:1278:18)
+          at NativeConnection.close (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongoose/lib/connection.js:1240:15)
+          at /media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongoose/lib/mongoose.js:496:60
+          at Array.map (<anonymous>)
+          at Mongoose.disconnect (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/mongoose/lib/mongoose.js:496:43)
+          at disconnectDB (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/src/config/database.ts:60:18)
+          at Object.<anonymous> (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/src/__tests__/apiKey.integration.test.ts:27:9)
+          at Promise.finally.completed (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/jestAdapterInit.js:1561:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/jestAdapterInit.js:1501:10)
+          at _callCircusHook (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/jestAdapterInit.js:980:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTestsForDescribeBlock (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/jestAdapterInit.js:895:7)
+          at run (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/jestAdapterInit.js:765:3)
+          at runAndTransformResultsToJestFormat (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/jestAdapterInit.js:1993:21)
+          at jestAdapter (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-circus/build/runner.js:111:19)
+          at runTestInternal (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-runner/build/index.js:276:16)
+          at runTest (/media/tharun-varshan-s/passport/SRI ESHWAR COLLEGE  OF ENGINEERING/SECE 3RD YEAR/5TH SEM/PROJECT/loglens/backend/node_modules/jest-runner/build/index.js:344:7) {
+        errorLabelSet: Set(0) {}
+      }
+
+      43 |       // log but don't block
+      44 |       // eslint-disable-next-line no-console
+    > 45 |       console.error('Failed to update api key lastUsedAt', err);
+         |               ^
+      46 |     });
+      47 |
+      48 |     // attach to request
+
+      at src/middleware/authenticateApiKey.middleware.ts:45:15
+
+    console.log
+      [2026-06-11 15:44:04] INFO Database disconnected
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+          at async Promise.all (index 0)
+
+    console.log
+      [2026-06-11 15:44:04] INFO Database disconnected
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+PASS src/__tests__/ingestion.integration.test.ts
+  ● Console
+
+    console.log
+      ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      [2026-06-11 15:44:05] INFO Database connected
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] INFO Project created: 6a2a8a6d710217c940e97d16 by user 6a2a8a6d710217c940e97d15
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] INFO [AUDIT] API_KEY_CREATED {"id":"6a2a8a6d710217c940e97d17","projectId":"6a2a8a6d710217c940e97d16","createdBy":"6a2a8a6d710217c940e97d15","name":"test-ingest-key"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] INFO API key created 6a2a8a6d710217c940e97d17 for project 6a2a8a6d710217c940e97d16 by user 6a2a8a6d710217c940e97d15
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 400 - Log level is required
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 400 - Invalid log level
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 400 - Log message is required
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 400 - Log service is required
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 401 - API key is required
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 401 - Malformed API key
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] INFO [AUDIT] AUTHENTICATION_FAILURE {"reason":"UNKNOWN_KEY"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/ingest 401 - Unauthorized
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/bulk 400 - Bulk payload must contain at least one log entry
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/bulk 400 - Bulk payload must be an array
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/bulk 400 - Item 1: Invalid log level
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:05] ERROR POST /api/v1/logs/bulk 401 - API key is required
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      [2026-06-11 15:44:07] INFO Database disconnected
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+          at async Promise.all (index 0)
+
+    console.log
+      [2026-06-11 15:44:07] INFO Database disconnected
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:87:23)
+
+Test Suites: 2 passed, 2 total
+Tests:       15 passed, 15 total
+Snapshots:   0 total
+Time:        8.325 s, estimated 22 s
+Ran all test suites.
+
+All clean. 2 test suites, 15 tests, 0 failures.
+
+There is one thing worth knowing though — it's not an error, but a harmless noise in the logs:
+
+console.error: Failed to update api key lastUsedAt — MongoClientClosedError
+
+Copy
+This comes from authenticateApiKey.middleware.ts line 45. The updateLastUsedAt call is intentionally fire-and-forget (no await), so when afterAll closes the DB connection before that background promise resolves, it prints this. It does not affect any test result and is expected behavior in a test teardown. Your production code is fine.
+
+Summary:
+
+apiKey.integration.test.ts — ✓ 1/1 passed
+
+ingestion.integration.test.ts — ✓ 14/14 passed
+
+
+
+@Pin Context
+
+Rules
+
+Auto
+
+Auto

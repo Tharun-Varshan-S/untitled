@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -16,6 +17,9 @@ if (nodeEnv === 'production' && !jwtSecret) {
   throw new Error('JWT_SECRET environment variable is required in production');
 }
 
+const maxUploadSizeMb = Number(process.env.MAX_UPLOAD_SIZE_MB ?? 10);
+const uploadDirectory = process.env.UPLOAD_DIRECTORY ?? path.join(process.cwd(), 'uploads');
+
 export const config = {
   port: Number(process.env.PORT ?? 5000),
   nodeEnv,
@@ -24,4 +28,11 @@ export const config = {
   jwtSecret: jwtSecret || 'change_me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   mongoUri,
+  upload: {
+    maxSizeMb: maxUploadSizeMb,
+    maxSizeBytes: maxUploadSizeMb * 1024 * 1024,
+    directory: uploadDirectory,
+    allowedExtensions: ['.csv', '.json', '.ndjson'],
+    allowedMimeTypes: ['text/csv', 'application/json', 'application/x-ndjson', 'text/plain'],
+  },
 };

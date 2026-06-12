@@ -1,0 +1,68 @@
+{
+  "info": {
+    "name": "LogLens API Keys",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"name\": \"ingest-key-1\" }"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/projects/{{projectId}}/api-keys",
+          "host": ["{{base_url}}"],
+          "path": ["api","v1","projects","{{projectId}}","api-keys"]
+        }
+      }
+    },
+    {
+      "name": "List API Keys",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{auth_token}}" } ],
+        "url": { "raw": "{{base_url}}/api/v1/projects/{{projectId}}/api-keys" }
+      }
+    },
+    {
+      "name": "Get API Key",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{auth_token}}" } ],
+        "url": { "raw": "{{base_url}}/api/v1/api-keys/{{apiKeyId}}" }
+      }
+    },
+    {
+      "name": "Revoke API Key",
+      "request": {
+        "method": "PATCH",
+        "header": [ { "key": "Authorization", "value": "Bearer {{auth_token}}" } ],
+        "url": { "raw": "{{base_url}}/api/v1/api-keys/{{apiKeyId}}/revoke" }
+      }
+    },
+    {
+      "name": "Delete API Key",
+      "request": {
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{auth_token}}" } ],
+        "url": { "raw": "{{base_url}}/api/v1/api-keys/{{apiKeyId}}" }
+      }
+    },
+    {
+      "name": "Authentication Example (Ingest)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "x-api-key", "value": "{{raw_api_key}}" }, { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{ \"message\": \"test log\" }" },
+        "url": { "raw": "{{base_url}}/api/v1/logs" }
+      }
+    }
+  ]
+}
