@@ -63,6 +63,8 @@ logSchema.index({ projectId: 1, timestamp: -1 });
 logSchema.index({ projectId: 1, level: 1 });
 logSchema.index({ projectId: 1, service: 1 });
 logSchema.index({ projectId: 1, level: 1, service: 1, timestamp: -1 });
+// Supports getTrends which groups by createdAt per projectId
+logSchema.index({ projectId: 1, createdAt: 1 });
 
 const LogModel = model<LogDocument>('Log', logSchema);
 export default LogModel;

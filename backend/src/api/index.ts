@@ -4,6 +4,7 @@ import healthRoutes from './health.routes';
 import logsRoutes from './logs.routes';
 import projectRoutes from './project.routes';
 import apiKeysRoutes from './api-keys.routes';
+import analyticsRoutes from './analytics.routes';
 
 export const registerRoutes = (app: Express): void => {
   const apiRouter = Router();
@@ -13,6 +14,7 @@ export const registerRoutes = (app: Express): void => {
   apiRouter.use('/projects', projectRoutes);
   apiRouter.use('/api-keys', apiKeysRoutes);
   apiRouter.use('/logs', logsRoutes);
+  apiRouter.use('/analytics', analyticsRoutes);
 
   app.use('/api/v1', apiRouter);
 };

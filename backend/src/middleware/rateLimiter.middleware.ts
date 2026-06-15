@@ -11,3 +11,15 @@ export const ingestionRateLimiter = rateLimit({
     errorCode: 'RATE_LIMIT_EXCEEDED',
   },
 });
+
+export const analyticsRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many analytics requests. Please try again later.',
+    errorCode: 'RATE_LIMIT_EXCEEDED',
+  },
+});

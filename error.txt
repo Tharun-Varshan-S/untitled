@@ -1866,3 +1866,241 @@ Rules
 Auto
 
 Auto
+Security Review
+
+FAIL
+
+HIGH Severity
+1. MIME Validation Bypass
+
+Location
+src/config/multer.ts
+
+Issue
+
+Validation relies on:
+
+file.mimetype
+
+which is fully controlled by the client.
+
+An attacker can upload arbitrary content while declaring:
+
+Content-Type: text/csv
+
+and bypass MIME validation.
+
+MEDIUM Severity
+2. Blocking File Reads
+
+Files
+
+csvParser.ts
+jsonParser.ts
+ndjsonParser.ts
+
+Issue
+
+All parsers use:
+
+readFileSync()
+
+This blocks the Node.js event loop.
+
+Impact:
+
+Slower uploads
+Reduced concurrency
+Increased latency
+3. Batch Insert Fragility
+
+Location
+logs.repository.ts
+
+Bulk insert uses ordered insertion.
+
+Result:
+
+One bad document
+        ↓
+Entire batch fails
+4. Filename Trust
+
+Stored filename still includes client-supplied filename component.
+
+Potential sanitization concerns remain.
+
+LOW Severity
+5. Upload Limits Incomplete
+
+Only file size is limited.
+
+Missing:
+
+field limits
+field name limits
+request field size limits
+6. text/plain Allowed
+
+Current configuration permits:
+
+text/plain
+
+making file-type enforcement weaker.
+
+Error Handling Review
+
+PASS (with warnings)
+
+Verified
+Error Type	Status
+Multer Errors	WARNING
+Parser Errors	PASS
+Validation Errors	PASS
+Database Errors	PASS
+Unexpected Exceptions	PASS
+Cleanup Logic	PASS
+Important Finding
+MulterError Handling Gap
+
+Current error middleware does not explicitly handle:
+
+MulterError
+
+Example:
+
+LIMIT_FILE_SIZE
+
+Expected:
+
+413 Payload Too Large
+
+Possible Actual Result:
+
+500 Internal Server Error
+Dependency Review
+
+PASS
+
+Required Dependencies
+Dependency	Status
+multer	Present
+@types/multer	Present
+dotenv	Present
+mongoose	Present
+File Handling Support	Present
+CSV Parsing Support	Present (custom implementation)
+Missing Dependencies
+
+None detected.
+
+Runtime Test Scenarios
+Scenario	Expected Status	Expected Result	Possible Failure Point
+A. Valid CSV Upload	201	Upload succeeds	Header mismatch
+B. Valid JSON Upload	201	Upload succeeds	JSON must be array
+C. Valid NDJSON Upload	201	Upload succeeds	All lines invalid
+D. Unsupported Extension	400	FILE_TYPE_INVALID	MIME spoofing
+E. Empty File	400	Parser empty-file error	None
+F. Corrupted JSON	400	JSON_PARSE_ERROR	None
+G. Missing CSV Fields	400	CSV_INVALID_HEADERS	Validation layer
+H. 10MB+ Upload	Expected 413	Possible 500 due to MulterError handling gap	Error middleware
+I. No File Attached	400	FILE_MISSING	None
+J. Database Failure	500	DB_INSERT_FAILED	Bulk insert failure
+Critical Issues
+1. Authentication User Type Mismatch
+
+Location
+upload.controller.ts
+
+Problem:
+
+req.user.id
+
+may not exist on actual authenticated user type.
+
+Impact:
+
+Authenticated request
+        ↓
+user.id undefined
+        ↓
+401 Unauthorized
+
+Potentially blocks all uploads.
+
+2. Multer Errors Not Explicitly Handled
+
+Location
+error.middleware.ts
+
+Impact:
+
+LIMIT_FILE_SIZE
+
+may return:
+
+500 Internal Server Error
+
+instead of:
+
+413 Payload Too Large
+3. Weak File-Type Validation
+
+Location
+config/multer.ts
+
+Current validation trusts client-provided MIME type.
+
+Risk:
+
+Malicious file
+        ↓
+Fake MIME header
+        ↓
+Upload accepted
+
+Severity: HIGH
+
+Warnings
+inserted: any[] weakens type safety.
+All parsers use synchronous file reads.
+console.warn used instead of centralized logger.
+Ordered bulk insert can fail entire batch.
+JSON parser accepts arrays only.
+Allowed MIME types include text/plain.
+Recommendations
+High Priority
+Verify actual authenticated user shape and ensure upload controller reads the correct identifier.
+Add explicit Multer error handling in global error middleware.
+Strengthen upload validation with content-based file verification.
+Medium Priority
+Replace synchronous file reads with non-blocking alternatives.
+Improve filename sanitization before storage.
+Improve bulk insert resilience for partial successes.
+Low Priority
+Remove unnecessary any usage.
+Replace console.warn with project logger.
+Document JSON array-only upload requirement.
+Production Readiness Score
+
+6/10
+
+Score Breakdown
+Area	Score
+Build Stability	10/10
+Architecture	8/10
+Routing	9/10
+Parsers	8/10
+Security	4/10
+Error Handling	6/10
+Type Safety	7/10
+Final Verdict
+
+NOT APPROVED
+
+Blocking Issues Before Production
+Authentication user type mismatch must be verified.
+Multer error handling must return correct HTTP responses.
+File-type validation mechanism is not sufficiently secure.
+
+Until these issues are resolved and revalidated, Phase G should not be promoted to production.
