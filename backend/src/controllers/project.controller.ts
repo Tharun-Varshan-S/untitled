@@ -15,11 +15,12 @@ import {
 } from '../validators/project.validation';
 
 const requireUser = (req: Request) => {
-  if (!req.user) {
+  const user = (req as any).user;
+  if (!user) {
     throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
   }
 
-  return req.user;
+  return user;
 };
 
 export const createProjectController = async (req: Request, res: Response) => {

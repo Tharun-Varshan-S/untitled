@@ -5,7 +5,12 @@ import app from './app';
 import { connectDB, disconnectDB } from './config/database';
 
 const startServer = async (): Promise<http.Server> => {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (error) {
+    logger.error(`MongoDB connection failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.warn('Server starting in degraded mode (Database offline).');
+  }
 
   const server = app.listen(config.port, () => {
     logger.info(`Server started on port ${config.port}`);

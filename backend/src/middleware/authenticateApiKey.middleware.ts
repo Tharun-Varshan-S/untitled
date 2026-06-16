@@ -50,16 +50,16 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
     });
 
     // attach to request with proper typing
-    const apiKeyData: Express.Request['apiKey'] = {
+    const apiKeyData = {
       id: record._id.toString(),
       name: record.name,
       prefix: record.prefix,
       projectId: record.projectId.toString(),
       revoked: record.revoked,
     };
-    req.apiKey = apiKeyData;
+    (req as any).apiKey = apiKeyData;
 
-    const projectData: Express.Request['project'] = {
+    const projectData = {
       id: project._id.toString(),
       name: project.name,
       description: project.description ?? '',
@@ -67,7 +67,7 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     };
-    req.project = projectData;
+    (req as any).project = projectData;
 
     return next();
   } catch (err) {

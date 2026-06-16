@@ -21,11 +21,12 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const getCurrentUser = async (req: Request, res: Response) => {
-  if (!req.user) {
+  const userReq = req as any;
+  if (!userReq.user) {
     throw new AppError('Unauthorized', 401);
   }
 
-  const user = getUserById(req.user.id);
+  const user = getUserById(userReq.user.id);
 
   res.status(200).json({
     success: true,

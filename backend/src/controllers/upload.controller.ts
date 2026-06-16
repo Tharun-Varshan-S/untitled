@@ -34,7 +34,7 @@ const validateFileExists = (file: Express.Multer.File | undefined): void => {
  */
 export const uploadLogsController = async (req: Request, res: Response): Promise<void> => {
   // Ensure authenticated user exists (set by authMiddleware)
-  const user = req.user as { id?: string } | undefined;
+  const user = (req as any).user as { id?: string } | undefined;
   if (!user?.id) {
     throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
   }

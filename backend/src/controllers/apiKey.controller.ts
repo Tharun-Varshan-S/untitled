@@ -11,8 +11,9 @@ import {
 import { validateApiKeyName, validateApiKeyId, validateProjectId } from '../validators/apiKey.validation';
 
 const requireUser = (req: Request) => {
-  if (!req.user) throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
-  return req.user;
+  const user = (req as any).user;
+  if (!user) throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
+  return user;
 };
 
 export const createApiKeyController = async (req: Request, res: Response) => {

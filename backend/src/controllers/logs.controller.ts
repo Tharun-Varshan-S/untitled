@@ -4,7 +4,7 @@ import { ingestLog, bulkIngestLogs, listLogs } from '../services/logs.service';
 import { validateBulkLogPayload, validateLogPayload } from '../validators/logs.validation';
 
 const getProjectIdFromRequest = (req: Request): string => {
-  const project = req.project;
+  const project = (req as any).project;
   if (!project?.id) {
     throw new AppError('Project context missing', 401, 'PROJECT_CONTEXT_MISSING');
   }

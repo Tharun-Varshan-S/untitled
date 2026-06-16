@@ -1,26 +1,132 @@
+
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* Backgrounds */
+    --background: 0 0% 0%; /* #000000 */
+    --surface: 0 0% 4%; /* #0A0A0A */
+    --surface-hover: 0 0% 8%; /* #141414 */
+    --surface-elevated: 0 0% 12%; /* #1F1F1F */
+    
+    /* Borders */
+    --border: 0 0% 15%; /* #262626 */
+    --border-subtle: 0 0% 10%; /* #1A1A1A */
+    --border-focus: 217 91% 60%; /* #3b82f6 */
+
+    /* Typography */
+    --text-primary: 0 0% 100%; /* #FFFFFF */
+    --text-secondary: 0 0% 63%; /* #A1A1AA */
+    --text-muted: 0 0% 45%; /* #737373 */
+
+    /* Semantic Colors */
+    --accent: 217 91% 60%; /* blue-500 */
+    --accent-hover: 221 83% 53%; /* blue-600 */
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%; /* green-500 */
+    --success-bg: 142 71% 45% / 0.1;
+    
+    --warning: 38 92% 50%; /* amber-500 */
+    --warning-bg: 38 92% 50% / 0.1;
+    
+    --error: 0 84% 60%; /* red-500 */
+    --error-bg: 0 84% 60% / 0.1;
+
+    --info: 217 91% 60%; /* blue-500 */
+    --info-bg: 217 91% 60% / 0.1;
+
+    /* Chart Colors */
+    --chart-1: 217 91% 60%; /* blue-500 */
+    --chart-2: 283 39% 53%; /* purple-500 */
+    --chart-3: 142 71% 45%; /* green-500 */
+    --chart-4: 38 92% 50%; /* amber-500 */
+    --chart-5: 0 84% 60%; /* red-500 */
+
+    /* Border Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: hsl(var(--background));
+    color: hsl(var(--text-primary));
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography Scale */
+  h1, .text-display { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.02em; }
+  h2, .text-heading { font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.01em; }
+  h3, .text-subheading { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+  p, .text-body { font-size: 0.875rem; line-height: 1.25rem; }
+  small, .text-caption { font-size: 0.75rem; line-height: 1rem; color: hsl(var(--text-secondary)); }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  /* Reusable structural classes */
+  .card-premium {
+    @apply bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl shadow-sm transition-shadow duration-200;
+  }
+  
+  .card-premium-hover {
+    @apply hover:border-[hsl(var(--border-focus))] hover:shadow-md hover:bg-[hsl(var(--surface-hover))];
+  }
+
+  .input-premium {
+    @apply flex h-10 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2 text-sm ring-offset-[hsl(var(--background))] file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[hsl(var(--text-muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--border-focus))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--border-focus))] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-[hsl(var(--background))] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent-hover))] h-10 py-2 px-4 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--border-focus))] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-[hsl(var(--background))] border border-[hsl(var(--border))] bg-transparent hover:bg-[hsl(var(--surface-hover))] text-[hsl(var(--text-primary))] h-10 py-2 px-4;
+  }
+  
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--border-focus))] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-[hsl(var(--background))] bg-transparent hover:bg-[hsl(var(--surface-hover))] text-[hsl(var(--text-primary))] h-10 py-2 px-4;
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--text-muted));
 }

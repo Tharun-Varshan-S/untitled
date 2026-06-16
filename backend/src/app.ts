@@ -40,7 +40,7 @@ if (process.env.NODE_ENV === 'test') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { authenticateApiKey } = require('./middleware/authenticateApiKey.middleware');
   app.post('/api/v1/_test/auth', authenticateApiKey, (req, res) => {
-    res.json({ success: true, project: req.project ?? null, apiKey: req.apiKey ?? null });
+    res.json({ success: true, project: (req as any).project ?? null, apiKey: (req as any).apiKey ?? null });
   });
 }
 

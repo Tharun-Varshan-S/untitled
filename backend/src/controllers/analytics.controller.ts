@@ -4,10 +4,11 @@ import { getOverview, getLogLevels, getServices, getTrends } from '../services/a
 import { getProjectById } from '../services/project.service';
 
 const requireUser = (req: Request) => {
-  if (!req.user) {
+  const user = (req as any).user;
+  if (!user) {
     throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
   }
-  return req.user;
+  return user;
 };
 
 const getValidatedProjectId = async (req: Request): Promise<string> => {
