@@ -22,7 +22,7 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased bg-gray-950 text-gray-100 transition-colors duration-200">
+      <body className="antialiased bg-[hsl(var(--background))] text-[hsl(var(--text-primary))] transition-colors duration-200">
         <ThemeProvider>
           <QueryProvider>
             {children}

@@ -6,17 +6,23 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ROUTES } from '@/lib/constants';
 import { useProjects } from '@/hooks/useProjects';
-import { useAnalyticsOverview } from '@/hooks/useAnalytics';
+import { 
+  useAnalyticsOverview, 
+  useAnalyticsLogLevels, 
+  useAnalyticsServices, 
+  useAnalyticsTrends 
+} from '@/hooks/useAnalytics';
 
 import { OverviewStats } from '@/features/dashboard/components/OverviewStats';
-import { LogVolumeChart } from '@/features/dashboard/components/LogVolumeChart';
-import { ErrorsByServiceChart } from '@/features/dashboard/components/ErrorsByServiceChart';
+import { LogsOverTimeChart } from '@/features/dashboard/components/charts/LogsOverTimeChart';
+import { TopServicesChart } from '@/features/dashboard/components/charts/TopServicesChart';
+import { LogLevelsChart } from '@/features/dashboard/components/charts/LogLevelsChart';
 import { ProjectSummaryWidget } from '@/features/dashboard/components/ProjectSummaryWidget';
 
 /**
  * Dashboard page — Client Component.
  * Uses React Query for data fetching.
- * Composed using Feature Widget Architecture (Phase L).
+ * Composed using Feature Widget Architecture (Phase L & M).
  */
 export default function DashboardPage() {
   const { data: projects = [], isLoading: isLoadingProjects, error: projectsError } = useProjects();
@@ -25,6 +31,9 @@ export default function DashboardPage() {
   const projectId = activeProject?.id || null;
 
   const { data: overview, isLoading: isLoadingOverview } = useAnalyticsOverview(projectId);
+  const { data: logLevels, isLoading: isLoadingLevels } = useAnalyticsLogLevels(projectId);
+  const { data: services, isLoading: isLoadingServices } = useAnalyticsServices(projectId);
+  const { data: trends, isLoading: isLoadingTrends } = useAnalyticsTrends(projectId);
 
   const fetchError = projectsError instanceof Error ? projectsError.message : null;
   const isLoading = isLoadingProjects || isLoadingOverview;
@@ -92,12 +101,15 @@ export default function DashboardPage() {
 
       {/* ── Charts Row (Recharts — Phase M) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <LogVolumeChart />
-        <ErrorsByServiceChart />
+        <LogsOverTimeChart data={trends} isLoading={isLoadingTrends} />
+        <TopServicesChart data={services} isLoading={isLoadingServices} />
+        <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6">
+           <div className="lg:col-span-2">
+              <ProjectSummaryWidget projects={projects} />
+           </div>
+           <LogLevelsChart data={logLevels} isLoading={isLoadingLevels} />
+        </div>
       </div>
-
-      {/* ── Projects Summary Row ── */}
-      <ProjectSummaryWidget projects={projects} />
     </div>
   );
 }

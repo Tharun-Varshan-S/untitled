@@ -25,3 +25,11 @@ export function useAnalyticsServices(projectId: string | null) {
     enabled: !!projectId,
   });
 }
+
+export function useAnalyticsTrends(projectId: string | null) {
+  return useQuery({
+    queryKey: QUERY_KEYS.analytics.trends(projectId!),
+    queryFn: () => analyticsApi.getTrends(projectId!),
+    enabled: !!projectId,
+  });
+}

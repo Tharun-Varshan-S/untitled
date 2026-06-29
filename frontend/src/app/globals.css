@@ -1,27 +1,26 @@
-
 @import "tailwindcss";
 @layer base {
   :root {
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-    /* Backgrounds */
-    --background: 0 0% 0%; /* #000000 */
-    --surface: 0 0% 4%; /* #0A0A0A */
-    --surface-hover: 0 0% 8%; /* #141414 */
-    --surface-elevated: 0 0% 12%; /* #1F1F1F */
+    /* Backgrounds - Light Mode */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --surface: 0 0% 98%; /* #FAFAFA */
+    --surface-hover: 0 0% 96%; /* #F5F5F5 */
+    --surface-elevated: 0 0% 100%; /* #FFFFFF */
     
-    /* Borders */
-    --border: 0 0% 15%; /* #262626 */
-    --border-subtle: 0 0% 10%; /* #1A1A1A */
+    /* Borders - Light Mode */
+    --border: 0 0% 90%; /* #E5E5E5 */
+    --border-subtle: 0 0% 93%; /* #EDEDED */
     --border-focus: 217 91% 60%; /* #3b82f6 */
 
-    /* Typography */
-    --text-primary: 0 0% 100%; /* #FFFFFF */
-    --text-secondary: 0 0% 63%; /* #A1A1AA */
-    --text-muted: 0 0% 45%; /* #737373 */
+    /* Typography - Light Mode */
+    --text-primary: 0 0% 9%; /* #171717 */
+    --text-secondary: 0 0% 45%; /* #737373 */
+    --text-muted: 0 0% 63%; /* #A1A1AA */
 
-    /* Semantic Colors */
+    /* Semantic Colors - Light Mode */
     --accent: 217 91% 60%; /* blue-500 */
     --accent-hover: 221 83% 53%; /* blue-600 */
     --accent-foreground: 0 0% 100%;
@@ -50,6 +49,24 @@
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
     --radius-xl: 1rem;
+  }
+
+  .dark {
+    /* Backgrounds - Dark Mode */
+    --background: 0 0% 0%; /* #000000 */
+    --surface: 0 0% 4%; /* #0A0A0A */
+    --surface-hover: 0 0% 8%; /* #141414 */
+    --surface-elevated: 0 0% 12%; /* #1F1F1F */
+    
+    /* Borders - Dark Mode */
+    --border: 0 0% 15%; /* #262626 */
+    --border-subtle: 0 0% 10%; /* #1A1A1A */
+    --border-focus: 217 91% 60%; /* #3b82f6 */
+
+    /* Typography - Dark Mode */
+    --text-primary: 0 0% 100%; /* #FFFFFF */
+    --text-secondary: 0 0% 63%; /* #A1A1AA */
+    --text-muted: 0 0% 45%; /* #737373 */
   }
 }
 
