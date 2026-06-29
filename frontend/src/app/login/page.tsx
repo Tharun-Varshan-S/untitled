@@ -1,13 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { ROUTES } from '@/lib/constants';
 
+/**
+ * Isolated component that reads useSearchParams().
+ * Must be wrapped in <Suspense> at the page level — Next.js requirement
+ * for any component that calls useSearchParams() during static generation.
+ */
+function RegisteredBanner() {
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get('registered') === '1';
+
+  if (!justRegistered) return null;
+
+  return (
+    <div className="p-3 bg-[hsl(var(--success-bg))] border border-[hsl(var(--success))/0.2] text-[hsl(var(--success))] text-sm rounded-md flex items-start gap-2">
+      <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+      </svg>
+      Account created! Sign in below to continue.
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -122,6 +144,10 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Suspense required — useSearchParams is read inside RegisteredBanner */}
+            <Suspense fallback={null}>
+              <RegisteredBanner />
+            </Suspense>
             {error && (
               <div className="p-3 bg-[hsl(var(--error-bg))] border border-[hsl(var(--error))/0.2] text-[hsl(var(--error))] text-sm rounded-md flex items-start gap-2">
                  <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -227,7 +253,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-8 text-center text-sm text-[hsl(var(--text-secondary))]">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href={ROUTES.REGISTER} className="font-medium text-[hsl(var(--text-primary))] hover:underline underline-offset-4">
               Sign up
             </Link>

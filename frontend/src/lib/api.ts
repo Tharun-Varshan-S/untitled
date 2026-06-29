@@ -5,23 +5,36 @@ interface FetchOptions extends RequestInit {
 }
 
 /**
- * Centralized API wrapper to handle common logic like setting auth headers,
- * error handling, and response parsing.
+ * Centralized API wrapper.
+ *
+ * Works in both Server Components and Client Components.
+ *
+ * Token injection strategy:
+ *   - Client Components: pass token via `serverToken` param (not used) — token
+ *     is read from localStorage automatically when window is defined.
+ *   - Server Components: call fetchApiServer() from lib/api.server.ts instead,
+ *     which reads the token from cookies before calling this function.
+ *
+ * This file deliberately does NOT import next/headers or any server-only module
+ * so it remains safe to import in Client Components.
  */
-export async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-  const { requireAuth = true, ...customConfig } = options;
-  
-  // Using Record<string, string> (compatible with fetch headers) instead of
-  // HeadersInit so we can safely set arbitrary header keys.
+export async function fetchApi<T>(
+  endpoint: string,
+  options: FetchOptions & { token?: string } = {}
+): Promise<T> {
+  const { requireAuth = true, token: explicitToken, ...customConfig } = options;
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(customConfig.headers as Record<string, string>),
   };
 
   if (requireAuth) {
-    // Note: In Next.js App Router, localStorage is only available on the client.
-    // For Server Components, read from cookies via lib/auth.ts instead.
-    if (typeof window !== 'undefined') {
+    // Explicit token passed in (used by server-side callers via fetchApiServer)
+    if (explicitToken) {
+      headers['Authorization'] = `Bearer ${explicitToken}`;
+    } else if (typeof window !== 'undefined') {
+      // Client-side: read from localStorage
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -39,13 +52,11 @@ export async function fetchApi<T>(endpoint: string, options: FetchOptions = {}):
     const data = await response.json();
 
     if (!response.ok) {
-      // Standardize error throwing so services can catch them easily
       throw new Error(data.message || 'An error occurred while fetching data');
     }
 
     return data;
-  } catch (error: any) {
-    // If it's a TypeError indicating 'Failed to fetch', it's a network/offline error
+  } catch (error: unknown) {
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       throw new Error(
         'Cannot reach backend. If you are using college Wi-Fi, a firewall might be blocking the connection. Try a mobile hotspot, a VPN, or check if the backend server is running on port 5000.'

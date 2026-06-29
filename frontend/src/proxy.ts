@@ -3,17 +3,21 @@ import type { NextRequest } from 'next/server';
 import { AUTH_TOKEN_KEY } from './lib/constants';
 
 /**
- * Next.js Proxy (formerly Middleware) — Authentication Guard
+ * Next.js 16 Proxy — Authentication Guard
  *
- * Runs on the Edge Runtime BEFORE a page renders.
+ * In Next.js 16, "Middleware" was renamed to "Proxy". The file must be named
+ * `proxy.ts` (or `proxy.js`) and the default export must be named `proxy`.
+ * The behaviour is identical to the former middleware.ts convention.
+ *
+ * Runs on the Node.js runtime BEFORE a page renders.
  * Reads the JWT token from cookies and:
  *   - Redirects unauthenticated users to /login
  *   - Redirects authenticated users away from /login or /register to /dashboard
  *
  * WHY COOKIES and not localStorage?
- * This proxy runs on the server/edge. localStorage is browser-only.
- * authService.login() sets a JS-accessible cookie alongside localStorage
- * so this proxy can read it.
+ * The proxy runs on the server. localStorage is browser-only.
+ * authService.login() writes a SameSite=Strict cookie alongside localStorage
+ * so this proxy can read it server-side.
  *
  * This is the single source of truth for route protection.
  * DO NOT duplicate auth guards inside individual pages.

@@ -1,38 +1,60 @@
-import { fetchApi } from '../lib/api';
+import { API_BASE_URL } from '../lib/constants';
+import { AUTH_TOKEN_KEY } from '../lib/constants';
 
-export interface UploadStatus {
-  id: string;
-  filename: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  uploadedAt: string;
+/**
+ * Result returned by the backend after a successful upload.
+ * Backend endpoint: POST /logs/upload
+ * Response: { success: true, data: UploadResult }
+ */
+export interface UploadResult {
+  totalProcessed: number;
+  totalInserted: number;
+  totalRejected: number;
+  rejectionReasons: Array<{ index: number; reason: string }>;
+  message: string;
 }
 
+/**
+ * Upload service — aligned to backend upload API contract.
+ *
+ * POST /logs/upload  → { success: true, data: UploadResult }
+ *   Accepts multipart/form-data with:
+ *     - file: the log file
+ *     - projectId: the target project (form field, not query param)
+ *
+ * NOTE: There is NO upload history endpoint in the backend.
+ * The uploads page shows history only for the current session
+ * (in-component state). Persistent history requires a future backend endpoint.
+ */
+
 class UploadService {
-  async uploadFile(file: File, projectId: string): Promise<UploadStatus> {
+  /**
+   * Uploads a log file for the given project.
+   * Uses raw fetch (not fetchApi) because multipart/form-data must NOT
+   * have Content-Type set manually — the browser sets the correct
+   * boundary automatically when Content-Type is omitted.
+   */
+  async uploadFile(file: File, projectId: string): Promise<UploadResult> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('projectId', projectId);
 
-    // Can't use fetchApi directly because we need multipart/form-data
-    // which shouldn't have Content-Type set manually when using FormData
-    const token = typeof window !== 'undefined' ? localStorage.getItem('loglens_auth_token') : null;
-    
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/uploads`, {
+    const token = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+
+    const response = await fetch(`${API_BASE_URL}/logs/upload`, {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
 
-    const data = await response.json();
+    const json = await response.json();
+
     if (!response.ok) {
-      throw new Error(data.message || 'Upload failed');
+      throw new Error(json.message || 'Upload failed');
     }
 
-    return data;
-  }
-
-  async getUploadHistory(): Promise<UploadStatus[]> {
-    return fetchApi<UploadStatus[]>('/uploads/history');
+    // Unwrap { success: true, data: UploadResult }
+    return json.data as UploadResult;
   }
 }
 

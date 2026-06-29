@@ -1,76 +1,119 @@
+'use client';
+
+import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { ROUTES } from '@/lib/constants';
+import { useProjects } from '@/hooks/useProjects';
+import { useAnalyticsOverview, useAnalyticsLogLevels, useAnalyticsServices } from '@/hooks/useAnalytics';
 
-export default async function AnalyticsPage() {
-  const summary = {
-    totalLogs: 125043,
-    errorLogs: 342,
-    warningLogs: 1024,
-    activeProjects: 4,
-  };
+/**
+ * Analytics page — Client Component.
+ * Uses React Query for data fetching.
+ */
+export default function AnalyticsPage() {
+  const { data: projects = [], isLoading: isLoadingProjects, error: projectsError } = useProjects();
+  
+  const activeProject = projects.length > 0 ? projects[0] : null;
+  const projectId = activeProject?.id || null;
 
-  const topProjects = [
-    { name: 'Production API', logs: 54000, errorRate: '0.22%', trend: 'up' },
-    { name: 'Frontend Client', logs: 12000, errorRate: '0.12%', trend: 'stable' },
-    { name: 'Auth Service', logs: 9800, errorRate: '0.05%', trend: 'down' },
-    { name: 'Notification Worker', logs: 4200, errorRate: '0.01%', trend: 'stable' },
-  ];
+  const { data: overview, isLoading: isLoadingOverview } = useAnalyticsOverview(projectId);
+  const { data: logLevels, isLoading: isLoadingLogLevels } = useAnalyticsLogLevels(projectId);
+  const { data: services = [], isLoading: isLoadingServices } = useAnalyticsServices(projectId);
+
+  const fetchError = projectsError instanceof Error ? projectsError.message : null;
+  const isLoading = isLoadingProjects || isLoadingOverview || isLoadingLogLevels || isLoadingServices;
+
+  // ── Loading state ──
+  if (isLoading) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="h-24 bg-[hsl(var(--surface-hover))] rounded-lg"></div>
+        <div className="h-48 bg-[hsl(var(--surface-hover))] rounded-lg"></div>
+        <div className="h-48 bg-[hsl(var(--surface-hover))] rounded-lg"></div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (fetchError) {
+    return (
+      <div className="space-y-8">
+        <PageHeader title="Analytics & Observability" description="System-wide metrics, error distribution, and log volume trends." />
+        <ErrorState message={fetchError} />
+      </div>
+    );
+  }
+
+  // ── No projects ──
+  if (projects.length === 0) {
+    return (
+      <div className="space-y-8">
+        <PageHeader title="Analytics & Observability" description="System-wide metrics, error distribution, and log volume trends." />
+        <EmptyState
+          title="No projects to analyse"
+          description="Create a project and ingest some logs to see analytics here."
+          action={
+            <Link href={ROUTES.PROJECTS} className="btn-primary">
+              Go to Projects
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  const totalEvents = (overview?.totalLogs ?? 0);
+  const errorPct = totalEvents > 0
+    ? ((overview?.totalErrors ?? 0) / totalEvents * 100).toFixed(2) + '%'
+    : '0.00%';
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Analytics & Observability"
-        description="System-wide metrics, error distribution, and log volume trends."
+        description={`Showing data for: ${activeProject!.name}`}
       >
-        <div className="flex items-center gap-3">
-          <select className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-md text-sm px-3 py-1.5 text-[hsl(var(--text-primary))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--border-focus))]">
-            <option>Last 15 minutes</option>
-            <option>Last 1 hour</option>
-            <option>Last 24 hours</option>
-            <option>Last 7 days</option>
-          </select>
-        </div>
+        <Link href={ROUTES.PROJECTS} className="btn-secondary !h-8 !px-3 gap-2 text-xs">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+          Switch Project
+        </Link>
       </PageHeader>
 
       {/* ── 1. Metrics Overview ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard 
-          title="Total Events" 
-          value={summary.totalLogs.toLocaleString()} 
-          trend="8.2% vs last period" 
-          trendDirection="up"
+        <MetricCard
+          title="Total Events"
+          value={totalEvents.toLocaleString()}
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
         />
-        <MetricCard 
-          title="Error Events" 
-          value={summary.errorLogs} 
-          trend="4.1% vs last period" 
-          trendDirection="down"
+        <MetricCard
+          title="Error Events"
+          value={(overview?.totalErrors ?? 0).toLocaleString()}
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
-        <MetricCard 
-          title="Warning Events" 
-          value={summary.warningLogs} 
-          trend="1.5% vs last period" 
-          trendDirection="up"
+        <MetricCard
+          title="Warning Events"
+          value={(overview?.totalWarnings ?? 0).toLocaleString()}
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
         />
-        <MetricCard 
-          title="Impacted Projects" 
-          value={summary.activeProjects} 
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+        <MetricCard
+          title="Error Rate"
+          value={errorPct}
+          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
         />
       </div>
 
-      {/* ── 2. Chart Containers ── */}
+      {/* ── 2. Chart Containers (Phase M) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div id="log-volume-trend-chart" className="card-premium p-6 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-medium text-[hsl(var(--text-primary))]">Global Event Volume</h3>
             <div className="flex gap-2">
-               <span className="flex items-center gap-1.5 text-xs text-[hsl(var(--text-secondary))]"><span className="w-2 h-2 rounded-full bg-[hsl(var(--chart-1))]"></span>System A</span>
-               <span className="flex items-center gap-1.5 text-xs text-[hsl(var(--text-secondary))]"><span className="w-2 h-2 rounded-full bg-[hsl(var(--chart-2))]"></span>System B</span>
+              <span className="flex items-center gap-1.5 text-xs text-[hsl(var(--text-secondary))]"><span className="w-2 h-2 rounded-full bg-[hsl(var(--chart-1))]"></span>All</span>
             </div>
           </div>
           <div className="flex-1 min-h-[300px] flex items-center justify-center border border-dashed border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--surface-hover))]">
@@ -82,52 +125,71 @@ export default async function AnalyticsPage() {
         </div>
 
         <div id="error-distribution-chart" className="card-premium p-6 flex flex-col">
-          <h3 className="font-medium text-[hsl(var(--text-primary))] mb-6">Severity Distribution</h3>
-          <div className="flex-1 min-h-[300px] flex items-center justify-center border border-dashed border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--surface-hover))]">
-             <div className="text-center">
-              <svg className="w-8 h-8 text-[hsl(var(--text-muted))] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
-              <p className="text-sm text-[hsl(var(--text-muted))]">Donut Chart (Phase M)</p>
+          <h3 className="font-medium text-[hsl(var(--text-primary))] mb-4">Severity Distribution</h3>
+          {/* Show real log-level counts as a simple breakdown until Phase M */}
+          {logLevels && (
+            <div className="space-y-3 mb-6">
+              {[
+                { label: 'Info', value: logLevels.info, color: 'hsl(var(--info))' },
+                { label: 'Warn', value: logLevels.warn, color: 'hsl(var(--warning))' },
+                { label: 'Error', value: logLevels.error, color: 'hsl(var(--error))' },
+              ].map(({ label, value, color }) => {
+                const total = logLevels.info + logLevels.warn + logLevels.error;
+                const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                return (
+                  <div key={label}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-[hsl(var(--text-secondary))]">{label}</span>
+                      <span className="font-mono text-[hsl(var(--text-primary))]">{value.toLocaleString()} ({pct}%)</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[hsl(var(--surface-elevated))] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          )}
+          <div className="flex-1 min-h-[180px] flex items-center justify-center border border-dashed border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--surface-hover))]">
+            <p className="text-sm text-[hsl(var(--text-muted))]">Donut Chart (Phase M)</p>
           </div>
         </div>
       </div>
 
-      {/* ── 3. Bottom Row: Table & AI ── */}
+      {/* ── 3. Services Table ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card-premium p-0 lg:col-span-2 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-[hsl(var(--border))]">
             <h3 className="font-medium text-[hsl(var(--text-primary))]">Top Services by Volume</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[hsl(var(--surface-hover))]">
-                <tr className="text-[hsl(var(--text-secondary))]">
-                  <th className="text-left py-3 px-6 font-medium">Service</th>
-                  <th className="text-right py-3 px-6 font-medium">Events</th>
-                  <th className="text-right py-3 px-6 font-medium">Error Rate</th>
-                  <th className="text-right py-3 px-6 font-medium">Trend</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[hsl(var(--border))]">
-                {topProjects.map((p) => (
-                  <tr key={p.name} className="hover:bg-[hsl(var(--surface-hover))] transition-colors">
-                    <td className="py-3 px-6 font-medium text-[hsl(var(--text-primary))]">{p.name}</td>
-                    <td className="py-3 px-6 text-right font-mono text-[hsl(var(--text-secondary))]">{p.logs.toLocaleString()}</td>
-                    <td className="py-3 px-6 text-right font-mono">
-                      <span className={parseFloat(p.errorRate) > 0.1 ? 'text-[hsl(var(--error))]' : 'text-[hsl(var(--text-secondary))]'}>
-                        {p.errorRate}
-                      </span>
-                    </td>
-                    <td className="py-3 px-6 text-right">
-                      {p.trend === 'up' && <StatusBadge status="error" label="↑ Rising" />}
-                      {p.trend === 'down' && <StatusBadge status="success" label="↓ Falling" />}
-                      {p.trend === 'stable' && <StatusBadge status="neutral" label="→ Stable" />}
-                    </td>
+          {services.length === 0 ? (
+            <div className="p-6">
+              <p className="text-sm text-[hsl(var(--text-muted))]">No service data yet. Ingest logs with a <code className="font-mono text-xs bg-[hsl(var(--surface-elevated))] px-1 rounded">service</code> field to see breakdown.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[hsl(var(--surface-hover))]">
+                  <tr className="text-[hsl(var(--text-secondary))]">
+                    <th className="text-left py-3 px-6 font-medium">Service</th>
+                    <th className="text-right py-3 px-6 font-medium">Events</th>
+                    <th className="text-right py-3 px-6 font-medium">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[hsl(var(--border))]">
+                  {services.map((svc) => (
+                    <tr key={svc.service} className="hover:bg-[hsl(var(--surface-hover))] transition-colors">
+                      <td className="py-3 px-6 font-medium text-[hsl(var(--text-primary))]">{svc.service}</td>
+                      <td className="py-3 px-6 text-right font-mono text-[hsl(var(--text-secondary))]">{svc.count.toLocaleString()}</td>
+                      <td className="py-3 px-6 text-right">
+                        <StatusBadge status="neutral" label="Active" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* ── 4. AI Insights placeholder (Phase Q) ── */}
@@ -142,11 +204,11 @@ export default async function AnalyticsPage() {
           </div>
           <div className="space-y-4">
             <p className="text-sm text-[hsl(var(--text-secondary))] leading-relaxed">
-              LogLens AI is analyzing your telemetry data. Currently establishing baselines for 4 services.
+              LogLens AI will analyse your telemetry data and establish baselines automatically.
             </p>
             <div className="p-3 bg-[hsl(var(--surface-hover))] rounded-md border border-[hsl(var(--border))]">
-               <p className="text-xs font-mono text-[hsl(var(--text-muted))]">Phase Q Feature</p>
-               <p className="text-sm text-[hsl(var(--text-primary))] mt-1">Automated anomaly detection and RCA summaries will appear here.</p>
+              <p className="text-xs font-mono text-[hsl(var(--text-muted))]">Phase Q Feature</p>
+              <p className="text-sm text-[hsl(var(--text-primary))] mt-1">Automated anomaly detection and RCA summaries will appear here.</p>
             </div>
           </div>
         </div>

@@ -21,8 +21,10 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // Backend register returns only a SafeUser — no token is issued.
+      // Redirect to login so the user authenticates and receives a token.
       await authService.register({ name, email, password });
-      router.push(ROUTES.DASHBOARD);
+      router.push(ROUTES.LOGIN + '?registered=1');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
@@ -84,7 +86,7 @@ export default function RegisterPage() {
                 <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
               ))}
             </div>
-            <p className="text-sm text-[hsl(var(--text-primary))] italic mb-4">"LogLens transformed how we debug microservices. We went from spending hours grepping logs to finding root causes in seconds."</p>
+            <p className="text-sm text-[hsl(var(--text-primary))] italic mb-4">&quot;LogLens transformed how we debug microservices. We went from spending hours grepping logs to finding root causes in seconds.&quot;</p>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[hsl(var(--surface-elevated))] flex items-center justify-center text-xs font-bold">JD</div>
               <div>

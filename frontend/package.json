@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-query-devtools": "^5.101.2",
     "axios": "^1.17.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -33,6 +34,7 @@
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
   }
 }

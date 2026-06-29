@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from './constants';
 
 export type HealthStatus = 'checking' | 'normal' | 'db_disconnected' | 'backend_offline';
 
-const BACKEND_HEALTH_URL = 'http://localhost:5000/api/health';
+// Derived from the centralized API_BASE_URL constant so this works in all
+// environments (local, staging, production) without code changes.
+const BACKEND_HEALTH_URL = `${API_BASE_URL}/health`;
 const POLL_INTERVAL_MS = 8000;
 
 /**

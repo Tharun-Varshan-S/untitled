@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { useHealthCheck } from '@/lib/useHealthCheck';
+import { ToastProvider } from '@/components/ui/ToastProvider';
 
 export default function ProtectedLayout({
   children,
@@ -21,6 +22,7 @@ export default function ProtectedLayout({
 
   return (
     <div className="flex min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--text-primary))] font-sans overflow-hidden">
+      <ToastProvider />
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {/* ── Connectivity Warning Banner ── */}

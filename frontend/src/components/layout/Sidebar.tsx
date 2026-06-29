@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/lib/constants';
+import { useUIStore, useProjectStore } from '@/store';
 
 interface NavItem {
   label: string;
@@ -66,103 +67,126 @@ const navGroups: NavGroup[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const sidebarOpen = useUIStore((state) => state.sidebarOpen);
+  const closeSidebar = useUIStore((state) => state.closeSidebar);
+  const selectedProjectName = useProjectStore((state) => state.selectedProjectName);
 
   return (
-    <aside className="w-64 bg-[hsl(var(--surface))] min-h-screen flex flex-col border-r border-[hsl(var(--border))] flex-shrink-0 relative">
-      {/* ── Workspace Selector ── */}
-      <div className="h-16 px-4 flex items-center border-b border-[hsl(var(--border))]">
-        <button className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[hsl(var(--surface-hover))] transition-colors group">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-6 h-6 bg-[hsl(var(--accent))] rounded flex items-center justify-center flex-shrink-0 shadow-sm">
-              <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm2 6h16v2H4v-2zm0 4h16v2H4v-2z"/>
-              </svg>
+    <>
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+          onClick={closeSidebar}
+        />
+      )}
+      
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-[hsl(var(--surface))] min-h-screen flex flex-col border-r border-[hsl(var(--border))] transition-transform transform ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:relative md:translate-x-0 md:flex-shrink-0`}>
+        {/* ── Workspace Selector ── */}
+        <div className="h-16 px-4 flex items-center justify-between border-b border-[hsl(var(--border))]">
+          <button className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[hsl(var(--surface-hover))] transition-colors group">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-6 h-6 bg-[hsl(var(--accent))] rounded flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm2 6h16v2H4v-2zm0 4h16v2H4v-2z"/>
+                </svg>
+              </div>
+              <div className="truncate text-left">
+                <p className="text-[hsl(var(--text-primary))] text-sm font-medium leading-none truncate">{selectedProjectName || 'All Projects'}</p>
+                <p className="text-[hsl(var(--text-muted))] text-xs mt-0.5 truncate">Production Workspace</p>
+              </div>
             </div>
-            <div className="truncate text-left">
-              <p className="text-[hsl(var(--text-primary))] text-sm font-medium leading-none truncate">Acme Corp</p>
-              <p className="text-[hsl(var(--text-muted))] text-xs mt-0.5 truncate">Production Workspace</p>
-            </div>
-          </div>
-          <svg className="w-4 h-4 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
-        </button>
-      </div>
-
-      {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8 scrollbar-hide">
-        {navGroups.map((group) => (
-          <div key={group.title}>
-            <p className="px-3 text-xs font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider mb-2">
-              {group.title}
-            </p>
-            <ul className="space-y-1">
-              {group.items.map((item) => {
-                const isActive = pathname.startsWith(item.href) && !item.disabled;
-                return (
-                  <li key={item.label}>
-                    {item.disabled ? (
-                      <div className="flex items-center justify-between px-3 py-2 text-sm text-[hsl(var(--text-muted))] cursor-not-allowed opacity-60">
-                        <div className="flex items-center gap-3">
-                          {item.icon}
-                          <span>{item.label}</span>
-                        </div>
-                        {item.badge && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))]">
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        className={`group flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all ${
-                          isActive
-                            ? 'bg-[hsl(var(--surface-elevated))] text-[hsl(var(--text-primary))] font-medium shadow-sm'
-                            : 'text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--text-primary))]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={isActive ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-colors'}>
-                            {item.icon}
-                          </span>
-                          {item.label}
-                        </div>
-                      </Link>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      {/* ── Bottom Section ── */}
-      <div className="p-4 border-t border-[hsl(var(--border))] space-y-1">
-         <Link
-            href={ROUTES.SETTINGS}
-            className={`group flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all ${
-              pathname.startsWith(ROUTES.SETTINGS)
-                ? 'bg-[hsl(var(--surface-elevated))] text-[hsl(var(--text-primary))] font-medium shadow-sm'
-                : 'text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--text-primary))]'
-            }`}
+            <svg className="w-4 h-4 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+          </button>
+          <button 
+            className="md:hidden p-2 text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]"
+            onClick={closeSidebar}
           >
-            <div className="flex items-center gap-3">
-              <span className={pathname.startsWith(ROUTES.SETTINGS) ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-colors'}>
-                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              </span>
-              Settings
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        {/* ── Navigation ── */}
+        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8 scrollbar-hide">
+          {navGroups.map((group) => (
+            <div key={group.title}>
+              <p className="px-3 text-xs font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider mb-2">
+                {group.title}
+              </p>
+              <ul className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive = pathname.startsWith(item.href) && !item.disabled;
+                  return (
+                    <li key={item.label}>
+                      {item.disabled ? (
+                        <div className="flex items-center justify-between px-3 py-2 text-sm text-[hsl(var(--text-muted))] cursor-not-allowed opacity-60">
+                          <div className="flex items-center gap-3">
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))]">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => closeSidebar()}
+                          className={`group flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all ${
+                            isActive
+                              ? 'bg-[hsl(var(--surface-elevated))] text-[hsl(var(--text-primary))] font-medium shadow-sm'
+                              : 'text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--text-primary))]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={isActive ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-colors'}>
+                              {item.icon}
+                            </span>
+                            {item.label}
+                          </div>
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-          </Link>
-          <div className="mt-2 pt-2 border-t border-[hsl(var(--border-subtle))] px-3 py-2 flex items-center gap-3">
-             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--accent))] to-[hsl(var(--chart-2))] flex items-center justify-center text-xs font-bold shadow-inner">
-               E
-             </div>
-             <div className="flex-1 truncate">
-               <p className="text-sm font-medium text-[hsl(var(--text-primary))] truncate">Engineer</p>
-               <p className="text-xs text-[hsl(var(--text-muted))] truncate">Free Tier</p>
-             </div>
-          </div>
-      </div>
-    </aside>
+          ))}
+        </nav>
+
+        {/* ── Bottom Section ── */}
+        <div className="p-4 border-t border-[hsl(var(--border))] space-y-1">
+           <Link
+              href={ROUTES.SETTINGS}
+              onClick={() => closeSidebar()}
+              className={`group flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all ${
+                pathname.startsWith(ROUTES.SETTINGS)
+                  ? 'bg-[hsl(var(--surface-elevated))] text-[hsl(var(--text-primary))] font-medium shadow-sm'
+                  : 'text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--text-primary))]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className={pathname.startsWith(ROUTES.SETTINGS) ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-colors'}>
+                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </span>
+                Settings
+              </div>
+            </Link>
+            <div className="mt-2 pt-2 border-t border-[hsl(var(--border-subtle))] px-3 py-2 flex items-center gap-3">
+               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--accent))] to-[hsl(var(--chart-2))] flex items-center justify-center text-xs font-bold shadow-inner">
+                 E
+               </div>
+               <div className="flex-1 truncate">
+                 <p className="text-sm font-medium text-[hsl(var(--text-primary))] truncate">Engineer</p>
+                 <p className="text-xs text-[hsl(var(--text-muted))] truncate">Free Tier</p>
+               </div>
+            </div>
+        </div>
+      </aside>
+    </>
   );
 }

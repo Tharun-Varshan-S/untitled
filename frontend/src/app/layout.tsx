@@ -16,11 +16,18 @@ export const metadata: Metadata = {
  * ALL pages inherit from this layout.
  * The `(protected)` group layout adds Sidebar + Navbar on top of this.
  */
+import { QueryProvider } from '@/providers/QueryProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased bg-gray-950 text-gray-100">
-        {children}
+      <body className="antialiased bg-gray-950 text-gray-100 transition-colors duration-200">
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
