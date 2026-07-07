@@ -5,7 +5,10 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export interface UserDocument extends Document {
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
+  authProvider: 'local' | 'google' | 'github';
+  providerId?: string;
+  avatarUrl?: string;
   passwordResetToken?: string;
   passwordResetTokenExpires?: Date;
   createdAt: Date;
@@ -29,8 +32,21 @@ const userSchema = new Schema<UserDocument>(
     },
     passwordHash: {
       type: String,
-      required: true,
+      required: function (this: any) {
+        return this.authProvider === 'local';
+      },
       select: false,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google', 'github'],
+      default: 'local',
+    },
+    providerId: {
+      type: String,
+    },
+    avatarUrl: {
+      type: String,
     },
     passwordResetToken: {
       type: String,

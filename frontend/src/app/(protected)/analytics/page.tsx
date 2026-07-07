@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { ROUTES } from '@/lib/constants';
 import { useProjects } from '@/hooks/useProjects';
 import { useAnalyticsOverview, useAnalyticsLogLevels, useAnalyticsServices } from '@/hooks/useAnalytics';
+import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
 
 /**
  * Analytics page — Client Component.
@@ -23,6 +24,8 @@ export default function AnalyticsPage() {
   const { data: overview, isLoading: isLoadingOverview } = useAnalyticsOverview(projectId);
   const { data: logLevels, isLoading: isLoadingLogLevels } = useAnalyticsLogLevels(projectId);
   const { data: services = [], isLoading: isLoadingServices } = useAnalyticsServices(projectId);
+
+  useAnalyticsStream(projectId || undefined);
 
   const fetchError = projectsError instanceof Error ? projectsError.message : null;
   const isLoading = isLoadingProjects || isLoadingOverview || isLoadingLogLevels || isLoadingServices;

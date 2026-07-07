@@ -3,6 +3,8 @@ import { AppError } from '../utils/AppError';
 import { LogLevel } from '../models/Log';
 import { LogRequest, LogResponse, PaginatedLogs } from '../types/logs.types';
 import * as logsRepo from '../repositories/logs.repository';
+import { broadcastNewLog } from '../socket/broadcast';
+import { broadcastAnalyticsUpdate } from '../socket/analytics';
 
 const mapLog = (doc: { _id: any; projectId: any; level: LogLevel; message: string; service: string; metadata?: Record<string, unknown> | undefined; timestamp: Date; createdAt: Date; updatedAt: Date }): LogResponse => ({
   id: doc._id.toString(),
@@ -28,7 +30,10 @@ export const ingestLog = async (projectId: string, payload: LogRequest): Promise
     timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
   });
 
-  return mapLog(created);
+  const response = mapLog(created);
+  broadcastNewLog(projectId, response);
+  broadcastAnalyticsUpdate(projectId);
+  return response;
 };
 
 export const bulkIngestLogs = async (projectId: string, payload: LogRequest[]): Promise<{ totalReceived: number; totalInserted: number }> => {
@@ -47,6 +52,13 @@ export const bulkIngestLogs = async (projectId: string, payload: LogRequest[]): 
   }));
 
   const inserted = await logsRepo.insertLogs(documents);
+
+  // Broadcast each new log
+  inserted.forEach((doc) => {
+    broadcastNewLog(projectId, mapLog(doc));
+  });
+
+  broadcastAnalyticsUpdate(projectId);
 
   return {
     totalReceived: payload.length,

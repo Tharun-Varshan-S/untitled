@@ -12,6 +12,7 @@ import {
   useAnalyticsServices, 
   useAnalyticsTrends 
 } from '@/hooks/useAnalytics';
+import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
 
 import { OverviewStats } from '@/features/dashboard/components/OverviewStats';
 import { LogsOverTimeChart } from '@/features/dashboard/components/charts/LogsOverTimeChart';
@@ -34,6 +35,8 @@ export default function DashboardPage() {
   const { data: logLevels, isLoading: isLoadingLevels } = useAnalyticsLogLevels(projectId);
   const { data: services, isLoading: isLoadingServices } = useAnalyticsServices(projectId);
   const { data: trends, isLoading: isLoadingTrends } = useAnalyticsTrends(projectId);
+  
+  useAnalyticsStream(projectId || undefined);
 
   const fetchError = projectsError instanceof Error ? projectsError.message : null;
   const isLoading = isLoadingProjects || isLoadingOverview;

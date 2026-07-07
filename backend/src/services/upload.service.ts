@@ -5,6 +5,8 @@ import { logger } from '../utils/logger';
 import { parseFile } from './parsers';
 import { validateLogPayload } from '../validators/logs.validation';
 import * as logsRepo from '../repositories/logs.repository';
+import { broadcastNewLog } from '../socket/broadcast';
+import { broadcastAnalyticsUpdate } from '../socket/analytics';
 
 /**
  * Upload result metadata
@@ -79,6 +81,23 @@ export const uploadAndProcessLogs = async (
     let inserted: any[] = [];
     try {
       inserted = await logsRepo.insertLogs(documents);
+
+      // Broadcast each new log
+      inserted.forEach((doc) => {
+        broadcastNewLog(projectId, {
+          id: doc._id.toString(),
+          projectId: doc.projectId.toString(),
+          level: doc.level,
+          message: doc.message,
+          service: doc.service,
+          metadata: doc.metadata,
+          timestamp: doc.timestamp,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        });
+      });
+
+      broadcastAnalyticsUpdate(projectId);
     } catch (error) {
       throw new AppError(
         `Database insertion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,

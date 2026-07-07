@@ -3,6 +3,9 @@ module.exports = {
   testEnvironment: 'node',
   testTimeout: 20000,
   roots: ['<rootDir>/src'],
+  moduleNameMapper: {
+    '^@shared/(.*)$': '<rootDir>/../shared/$1'
+  },
   testMatch: ['**/*.test.ts'],
   globals: {
     'ts-jest': {

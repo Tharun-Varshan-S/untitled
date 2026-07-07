@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { useHealthCheck } from '@/lib/useHealthCheck';
 import { ToastProvider } from '@/components/ui/ToastProvider';
+import { useRoomManager } from '@/hooks/useRoomManager';
 
 export default function ProtectedLayout({
   children,
@@ -12,6 +13,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const healthStatus = useHealthCheck();
+  useRoomManager(); // Synchronize socket rooms with selected project
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const showBanner =

@@ -3,7 +3,7 @@ import { config } from './config/env';
 import { logger } from './utils/logger';
 import app from './app';
 import { connectDB, disconnectDB } from './config/database';
-
+import { initializeSocket, closeSocket } from './socket';
 const startServer = async (): Promise<http.Server> => {
   try {
     await connectDB();
@@ -12,25 +12,34 @@ const startServer = async (): Promise<http.Server> => {
     logger.warn('Server starting in degraded mode (Database offline).');
   }
 
-  const server = app.listen(config.port, () => {
+  const server = http.createServer(app);
+  await initializeSocket(server);
+  
+  server.listen(config.port, () => {
     logger.info(`Server started on port ${config.port}`);
   });
 
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`Shutdown initiated by ${signal}`);
 
-    server.close(async (closeError) => {
-      if (closeError) {
-        logger.error(`Error closing HTTP server: ${closeError.message}`);
+    closeSocket((socketCloseError) => {
+      if (socketCloseError) {
+        logger.error(`Error closing Socket.IO server: ${socketCloseError.message}`);
       }
+      
+      server.close(async (closeError) => {
+        if (closeError) {
+          logger.error(`Error closing HTTP server: ${closeError.message}`);
+        }
 
-      try {
-        await disconnectDB();
-      } catch (disconnectError) {
-        logger.error(`Error disconnecting MongoDB: ${disconnectError instanceof Error ? disconnectError.message : String(disconnectError)}`);
-      }
+        try {
+          await disconnectDB();
+        } catch (disconnectError) {
+          logger.error(`Error disconnecting MongoDB: ${disconnectError instanceof Error ? disconnectError.message : String(disconnectError)}`);
+        }
 
-      process.exit(0);
+        process.exit(0);
+      });
     });
 
     setTimeout(() => {

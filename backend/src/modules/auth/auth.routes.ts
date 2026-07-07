@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { getCurrentUser, login, register, forgotPassword, resetUserPassword } from './auth.controller';
+import { googleLogin, googleCallback, githubLogin, githubCallback } from './oauth.controller';
 
 const router = Router();
 
@@ -25,4 +26,9 @@ router.post('/forgot-password', authLimiter, asyncHandler(forgotPassword));
 router.post('/reset-password', authLimiter, asyncHandler(resetUserPassword));
 router.get('/me', authMiddleware, asyncHandler(getCurrentUser));
 
+// OAuth Routes
+router.get('/google', googleLogin);
+router.get('/google/callback', asyncHandler(googleCallback));
+router.get('/github', githubLogin);
+router.get('/github/callback', asyncHandler(githubCallback));
 export default router;

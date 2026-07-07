@@ -1,4 +1,5 @@
 import { fetchApi } from '../lib/api';
+import { connectionService } from './socket/connection';
 import { LoginCredentials, RegisterCredentials, User, AuthLoginData, ApiSuccess } from '../types/auth.types';
 import { AUTH_TOKEN_KEY } from '../lib/constants';
 
@@ -57,6 +58,7 @@ class AuthService {
       body: JSON.stringify(credentials),
     });
     persistToken(res.data.token);
+    connectionService.connect();
     return res.data;
   }
 
@@ -77,6 +79,15 @@ class AuthService {
 
   logout(): void {
     clearToken();
+    connectionService.disconnect();
+  }
+
+  /**
+   * Manually sets and persists a token (used for OAuth callbacks)
+   */
+  setToken(token: string): void {
+    persistToken(token);
+    connectionService.connect();
   }
 
   /**

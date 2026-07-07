@@ -9,6 +9,7 @@ import { ROUTES } from '@/lib/constants';
 import Link from 'next/link';
 import { useProject } from '@/hooks/useProjects';
 import { useAnalyticsOverview } from '@/hooks/useAnalytics';
+import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
 
 /**
  * Project detail page — Client Component.
@@ -23,6 +24,8 @@ export default function ProjectDetailPage({
 
   const { data: project, isLoading: isLoadingProject, error: projectError } = useProject(projectId);
   const { data: overview, isLoading: isLoadingOverview } = useAnalyticsOverview(projectId);
+
+  useAnalyticsStream(projectId || undefined);
 
   const fetchError = projectError instanceof Error ? projectError.message : null;
   const isLoading = isLoadingProject || isLoadingOverview;
