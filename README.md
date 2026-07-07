@@ -10,6 +10,7 @@ LogLens is a comprehensive platform designed for parsing, ingesting, and analyzi
 ```mermaid
 graph TD
     Client[Web Client - Next.js] -->|REST / API| Backend[Node.js + Express Backend]
+    Client <-->|WebSocket / Socket.IO| Backend
     
     subgraph Frontend [Frontend Architecture]
         Client
@@ -23,6 +24,7 @@ graph TD
         Backend --> Auth[Authentication Service]
         Backend --> Ingestion[Log Ingestion Engine]
         Backend --> Analytics[Analytics Engine]
+        Backend --> Socket[Socket.IO Subsystem]
     end
 
     subgraph Data [Data Layer]
@@ -36,8 +38,13 @@ graph TD
 
 ```mermaid
 graph TD
-    Root[loglens] --> Backend[backend/]
+    Root[loglens] --> Shared[shared/]
+    Root --> Backend[backend/]
     Root --> Frontend[frontend/]
+
+    subgraph Shared Contracts
+        Shared --> S_Socket[socket/ - Socket.IO Types & Events]
+    end
 
     subgraph Backend Directory
         Backend --> B_Src[src/]
@@ -46,6 +53,7 @@ graph TD
         B_Src --> B_Services[services/ - Business Logic]
         B_Src --> B_Models[models/ - Mongoose Schemas]
         B_Src --> B_Middleware[middleware/ - Auth & Validation]
+        B_Src --> B_Socket[socket/ - Socket.IO Infrastructure]
     end
 
     subgraph Frontend Directory
@@ -123,3 +131,5 @@ npx vitest run
 - **Phase I**: Next.js Migration.
 - **Phase J**: TanStack Query integration (Server State).
 - **Phase K**: Zustand integration (Client State).
+- **Phase L-M**: Dashboard Architecture & Recharts Integration.
+- **Phase N**: Production-ready Socket.IO Infrastructure (Real-time Logs, Live Analytics, Secure Rooms, Socket Auth, Horizontal Scaling readiness).
