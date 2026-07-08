@@ -6,6 +6,7 @@ import projectRoutes from './project.routes';
 import apiKeysRoutes from './api-keys.routes';
 import logsRoutes from './logs.routes';
 import analyticsRoutes from './analytics.routes';
+import searchRoutes from './search.routes';
 import { AppError } from '../utils/AppError';
 
 export const registerRoutes = (app: Express): void => {
@@ -26,6 +27,7 @@ export const registerRoutes = (app: Express): void => {
   apiRouter.use('/api-keys', apiKeysRoutes);
   apiRouter.use('/logs', logsRoutes);
   apiRouter.use('/analytics', analyticsRoutes);
+  apiRouter.use('/search', searchRoutes);
 
   app.use('/api/v1', apiRouter);
   app.use('/api', apiRouter);

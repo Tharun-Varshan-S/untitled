@@ -2,7 +2,7 @@ import { getIO } from '../index';
 import { getOverview, getLogLevels, getServices, getTrends } from '../../services/analytics.service';
 import { logger } from '../../utils/logger';
 import { socketMetrics } from '../services/metrics';
-import { SocketEvents } from '@shared/socket/events';
+import { SocketEvents } from '../../../../shared/socket/events';
 
 // Debounce map: projectId -> timeout
 const debounceMap = new Map<string, NodeJS.Timeout>();

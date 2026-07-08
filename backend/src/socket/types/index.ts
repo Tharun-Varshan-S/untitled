@@ -1,5 +1,5 @@
 import { SafeUser } from '../../modules/auth/auth.types';
-import { SharedClientToServerEvents, SharedServerToClientEvents } from '@shared/socket/types';
+import { SharedClientToServerEvents, SharedServerToClientEvents } from '../../../../shared/socket/types';
 
 export type ServerToClientEvents = SharedServerToClientEvents;
 export type ClientToServerEvents = SharedClientToServerEvents;

@@ -9,7 +9,7 @@ import { createRedisAdapter } from './services/redisAdapter';
 import { socketMetrics } from './services/metrics';
 import { socketRateLimiter } from './services/rateLimiter';
 import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData } from './types';
-import { SocketEvents } from '@shared/socket/events';
+import { SocketEvents } from '../../../shared/socket/events';
 
 let io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> | null = null;
 let metricsInterval: NodeJS.Timeout | null = null;

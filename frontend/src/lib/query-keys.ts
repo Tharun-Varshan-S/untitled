@@ -15,4 +15,7 @@ export const QUERY_KEYS = {
   auth: {
     session: ['auth', 'session'] as const,
   },
+  search: {
+    logs: (projectId: string, filters: Record<string, any>) => ['search', projectId, filters] as const,
+  }
 };

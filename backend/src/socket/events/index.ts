@@ -4,7 +4,7 @@ import { logger } from '../../utils/logger';
 import { roomManager } from '../rooms';
 import { withErrorHandler } from '../services/errorHandler';
 import { socketMetrics } from '../services/metrics';
-import { SocketEvents } from '@shared/socket/events';
+import { SocketEvents } from '../../../../shared/socket/events';
 
 export function registerSocketEvents(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
