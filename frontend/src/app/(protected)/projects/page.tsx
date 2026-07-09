@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ROUTES } from '@/lib/constants';
@@ -8,12 +9,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectStore } from '@/store';
+import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
 
 /**
  * Projects page — Client Component.
  * Fetches projects via React Query.
  */
 export default function ProjectsPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: projects = [], isLoading, error } = useProjects();
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject);
   const fetchError = error instanceof Error ? error.message : null;
@@ -24,11 +27,16 @@ export default function ProjectsPage() {
         title="Projects"
         description="Manage your monitored applications and services."
       >
-        <button className="btn-primary gap-2">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="btn-primary gap-2"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
           New Project
         </button>
       </PageHeader>
+
+      {isModalOpen && <CreateProjectModal onClose={() => setIsModalOpen(false)} />}
 
       {isLoading ? (
         <div className="space-y-4 animate-pulse">

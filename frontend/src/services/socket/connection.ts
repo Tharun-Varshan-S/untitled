@@ -13,7 +13,7 @@ class ConnectionService {
   private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
 
   constructor() {
-    const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
     
     // Extract the origin to avoid connecting to the '/api' namespace
     try {

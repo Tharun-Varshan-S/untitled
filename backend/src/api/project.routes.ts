@@ -9,6 +9,7 @@ import {
   listProjectsController,
   updateProjectController,
 } from '../controllers/project.controller';
+import { searchLogsUserContextController } from '../controllers/search.controller';
 import projectApiKeysRoutes from './project-api-keys.routes';
 
 const router = Router();
@@ -23,5 +24,8 @@ router.delete('/:id', asyncHandler(deleteProjectController));
 
 // Project-scoped API keys
 router.use('/:id/api-keys', projectApiKeysRoutes);
+
+// Search logs within a project (via user auth)
+router.get('/:id/search', asyncHandler(searchLogsUserContextController));
 
 export default router;

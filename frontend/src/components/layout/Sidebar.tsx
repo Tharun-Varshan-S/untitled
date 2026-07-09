@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/lib/constants';
 import { useUIStore, useProjectStore } from '@/store';
+import { useProjects } from '@/hooks/useProjects';
 
 interface NavItem {
   label: string;
@@ -74,7 +76,22 @@ export default function Sidebar() {
   const pathname = usePathname();
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
   const closeSidebar = useUIStore((state) => state.closeSidebar);
-  const selectedProjectName = useProjectStore((state) => state.selectedProjectName);
+  const { selectedProjectId, selectedProjectName, setSelectedProject } = useProjectStore();
+  const { data: projects = [], isLoading } = useProjects();
+  
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -90,8 +107,11 @@ export default function Sidebar() {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } md:relative md:translate-x-0 md:flex-shrink-0`}>
         {/* ── Workspace Selector ── */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-[hsl(var(--border))]">
-          <button className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[hsl(var(--surface-hover))] transition-colors group">
+        <div className="relative h-16 px-4 flex items-center justify-between border-b border-[hsl(var(--border))]" ref={dropdownRef}>
+          <button 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[hsl(var(--surface-hover))] transition-colors group"
+          >
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="w-6 h-6 bg-[hsl(var(--accent))] rounded flex items-center justify-center flex-shrink-0 shadow-sm">
                 <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -99,12 +119,54 @@ export default function Sidebar() {
                 </svg>
               </div>
               <div className="truncate text-left">
-                <p className="text-[hsl(var(--text-primary))] text-sm font-medium leading-none truncate">{selectedProjectName || 'All Projects'}</p>
+                <p className="text-[hsl(var(--text-primary))] text-sm font-medium leading-none truncate">{selectedProjectName || 'Select a Project'}</p>
                 <p className="text-[hsl(var(--text-muted))] text-xs mt-0.5 truncate">Production Workspace</p>
               </div>
             </div>
-            <svg className="w-4 h-4 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+            <svg className={`w-4 h-4 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
           </button>
+          
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute top-16 left-4 right-4 bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] rounded-md shadow-xl py-1 z-50 max-h-64 overflow-y-auto">
+              <div className="px-3 py-2 text-xs font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider">
+                Your Projects
+              </div>
+              {isLoading ? (
+                <div className="px-4 py-3 text-sm text-[hsl(var(--text-muted))]">Loading...</div>
+              ) : projects.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-[hsl(var(--text-muted))]">No projects found.</div>
+              ) : (
+                projects.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedProject(p.id, p.name);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-[hsl(var(--surface-hover))] transition-colors ${
+                      p.id === selectedProjectId ? 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))]' : 'text-[hsl(var(--text-primary))]'
+                    }`}
+                  >
+                    <span className="truncate">{p.name}</span>
+                    {p.id === selectedProjectId && (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                    )}
+                  </button>
+                ))
+              )}
+              <div className="border-t border-[hsl(var(--border))] mt-1 pt-1">
+                <Link 
+                  href={ROUTES.PROJECTS}
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-[hsl(var(--text-secondary))] hover:text-[hsl(var(--text-primary))] hover:bg-[hsl(var(--surface-hover))] transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                  Manage Projects
+                </Link>
+              </div>
+            </div>
+          )}
           <button 
             className="md:hidden p-2 text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]"
             onClick={closeSidebar}

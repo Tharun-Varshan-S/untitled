@@ -3,6 +3,9 @@ export const QUERY_KEYS = {
     all: ['projects'] as const,
     detail: (id: string) => ['projects', id] as const,
   },
+  apiKeys: {
+    list: (projectId: string) => ['apiKeys', projectId] as const,
+  },
   analytics: {
     overview: (projectId: string) => ['analytics', 'overview', projectId] as const,
     logLevels: (projectId: string) => ['analytics', 'logLevels', projectId] as const,
