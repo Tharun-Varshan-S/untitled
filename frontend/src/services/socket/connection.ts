@@ -13,7 +13,14 @@ class ConnectionService {
   private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
 
   constructor() {
-    this.backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    
+    // Extract the origin to avoid connecting to the '/api' namespace
+    try {
+      this.backendUrl = new URL(rawUrl).origin;
+    } catch {
+      this.backendUrl = rawUrl.replace(/\/api$/, '');
+    }
     
     this.socket = io(this.backendUrl, {
       autoConnect: false,
