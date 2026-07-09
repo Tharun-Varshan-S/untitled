@@ -1,5 +1,6 @@
 import { fetchApi } from '../lib/api';
 import { SearchParams, SearchResponse } from '../types/search.types';
+import { ApiSuccess } from '../types/auth.types';
 
 export const searchApi = {
   searchLogs: async (params: SearchParams): Promise<SearchResponse> => {
@@ -15,10 +16,10 @@ export const searchApi = {
     const queryString = new URLSearchParams(cleanedParams).toString();
     const url = `/projects/${projectId}/search${queryString ? `?${queryString}` : ''}`;
     
-    const response = await fetchApi<SearchResponse>(url, {
+    const response = await fetchApi<ApiSuccess<SearchResponse>>(url, {
       method: 'GET'
     });
     
-    return response;
+    return response.data;
   },
 };

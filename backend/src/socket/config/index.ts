@@ -11,7 +11,7 @@ export const socketConfig = {
   // Allowed Origins
   corsOrigins: envConfig.isProduction 
     ? (process.env.FRONTEND_URL || 'https://your-production-url.com')
-    : (process.env.FRONTEND_URL || 'http://localhost:3000'),
+    : (process.env.FRONTEND_URL || ['http://localhost:3000', 'http://127.0.0.1:3000']),
 
   // Redis Adapter Settings
   redisUrl: process.env.REDIS_URL || '',

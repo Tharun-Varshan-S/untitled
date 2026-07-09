@@ -24,7 +24,6 @@ class ConnectionService {
     
     this.socket = io(this.backendUrl, {
       autoConnect: false,
-      transports: ['websocket', 'polling'], // match backend
       withCredentials: true
     });
 

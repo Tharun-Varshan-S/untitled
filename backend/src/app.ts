@@ -19,7 +19,7 @@ app.use(compression());
 app.use(requestLoggingMiddleware);
 
 // CORS with whitelist
-const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001').split(',').map(origin => origin.trim());
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000').split(',').map(origin => origin.trim());
 app.use(cors({
   origin: corsOrigins,
   credentials: true,
