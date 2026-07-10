@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import type { UploadResult } from '@/services/upload.service';
 import { useUploadFile } from '@/hooks/useUploadFile';
+import { useProjectStore } from '@/store/useProjectStore';
 
 /**
  * Session-only upload record — persisted in component state for the current
@@ -25,7 +26,9 @@ export default function UploadsPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState('');
+
+  const { projects, activeProject } = useProjectStore();
+  const [projectId, setProjectId] = useState(activeProject?.id || (projects.length > 0 ? projects[0].id : ''));
 
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
 
@@ -101,20 +104,30 @@ export default function UploadsPage() {
         <div className="card-premium p-6 xl:col-span-1 flex flex-col gap-4">
           <h3 className="font-medium text-[hsl(var(--text-primary))]">File Upload</h3>
 
-          {/* Project ID input — required by backend */}
+          {/* Project ID dropdown */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-[hsl(var(--text-primary))]">
-              Project ID <span className="text-[hsl(var(--error))]">*</span>
+              Project <span className="text-[hsl(var(--error))]">*</span>
             </label>
-            <input
-              type="text"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              placeholder="Enter your project ID"
-              className="input-premium"
-            />
+            {projects.length > 0 ? (
+              <select
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                className="input-premium appearance-none"
+              >
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm text-[hsl(var(--error))]">
+                No projects found. Please create a project first.
+              </div>
+            )}
             <p className="text-xs text-[hsl(var(--text-muted))]">
-              Find your project ID on the{' '}
+              Select the project to upload logs to. You can manage projects on the{' '}
               <Link href="/projects" className="text-[hsl(var(--accent))] hover:underline">
                 Projects
               </Link>{' '}

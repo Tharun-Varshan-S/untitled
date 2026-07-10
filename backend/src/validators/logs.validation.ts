@@ -1,7 +1,7 @@
 import { AppError } from '../utils/AppError';
 import { LogLevel } from '../models/Log';
 
-const validLevels: LogLevel[] = ['info', 'warn', 'error', 'debug'];
+const validLevels: LogLevel[] = ['info', 'warn', 'error', 'debug', 'fatal'];
 
 export type LogPayload = {
   level: LogLevel;

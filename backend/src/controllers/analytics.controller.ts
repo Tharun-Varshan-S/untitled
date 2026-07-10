@@ -45,6 +45,7 @@ export const getServicesController = async (req: Request, res: Response) => {
 
 export const getTrendsController = async (req: Request, res: Response) => {
   const projectId = await getValidatedProjectId(req);
-  const data = await getTrends(projectId);
+  const granularity = (req.query.granularity as 'day' | 'hour' | 'minute') || 'day';
+  const data = await getTrends(projectId, granularity);
   res.status(200).json(data);
 };

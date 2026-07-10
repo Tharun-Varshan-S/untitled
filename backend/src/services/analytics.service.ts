@@ -12,18 +12,23 @@ const ensureValidObjectId = (value: string): Types.ObjectId => {
 export const getOverview = async (projectId: string) => {
   const pId = ensureValidObjectId(projectId);
   
-  const [totalLogs, totalErrors, totalWarnings, uniqueServicesList] = await Promise.all([
+  const oneMinuteAgo = new Date();
+  oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1);
+
+  const [totalLogs, totalErrors, totalWarnings, uniqueServicesList, logsPerMinute] = await Promise.all([
     LogModel.countDocuments({ projectId: pId }),
     LogModel.countDocuments({ projectId: pId, level: 'error' }),
     LogModel.countDocuments({ projectId: pId, level: 'warn' }),
-    LogModel.distinct('service', { projectId: pId })
+    LogModel.distinct('service', { projectId: pId }),
+    LogModel.countDocuments({ projectId: pId, createdAt: { $gte: oneMinuteAgo } })
   ]);
 
   return {
     totalLogs,
     totalErrors,
     totalWarnings,
-    services: uniqueServicesList.length
+    services: uniqueServicesList.length,
+    logsPerMinute
   };
 };
 
@@ -63,14 +68,19 @@ export const getServices = async (projectId: string) => {
   }));
 };
 
-export const getTrends = async (projectId: string) => {
+export const getTrends = async (projectId: string, granularity: 'day' | 'hour' | 'minute' = 'day') => {
   const pId = ensureValidObjectId(projectId);
+  
+  let dateFormat = '%Y-%m-%d';
+  if (granularity === 'hour') dateFormat = '%Y-%m-%d %H:00';
+  if (granularity === 'minute') dateFormat = '%Y-%m-%d %H:%M';
+
   const result = await LogModel.aggregate([
     { $match: { projectId: pId } },
     {
       $group: {
         _id: {
-          $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          $dateToString: { format: dateFormat, date: '$createdAt' }
         },
         count: { $sum: 1 }
       }

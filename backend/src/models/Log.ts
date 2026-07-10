@@ -1,6 +1,6 @@
 import { Schema, model, Types, type Document } from 'mongoose';
 
-export type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'fatal';
 
 export interface LogDocument extends Document {
   projectId: Types.ObjectId;
@@ -22,7 +22,7 @@ const logSchema = new Schema<LogDocument>(
     },
     level: {
       type: String,
-      enum: ['info', 'warn', 'error', 'debug'],
+      enum: ['info', 'warn', 'error', 'debug', 'fatal'],
       required: true,
     },
     message: {

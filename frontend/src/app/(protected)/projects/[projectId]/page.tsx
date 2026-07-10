@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useProject } from '@/hooks/useProjects';
 import { useAnalyticsOverview } from '@/hooks/useAnalytics';
 import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
+import { LogTable } from '@/features/dashboard/components/LogTable';
 
 /**
  * Project detail page — Client Component.
@@ -100,21 +101,8 @@ export default function ProjectDetailPage({
         />
       </div>
 
-      {/* Live Log Stream placeholder (Phase N) */}
-      <div className="card-premium overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-[hsl(var(--border))] flex justify-between items-center bg-[hsl(var(--surface-hover))]">
-          <h3 className="font-medium text-[hsl(var(--text-primary))]">Live Log Stream</h3>
-          {/* Phase N: badge is intentionally neutral until WebSocket is wired */}
-          <span className="flex items-center gap-2 text-xs font-mono text-[hsl(var(--text-muted))] bg-[hsl(var(--surface-elevated))] px-2 py-1 rounded border border-[hsl(var(--border))]">
-            Phase N
-          </span>
-        </div>
-        <div className="p-6 min-h-[300px] font-mono text-sm bg-[#000000] flex items-center justify-center">
-          <p className="text-[hsl(var(--text-muted))]">
-            Live WebSocket stream connects here in Phase N.
-          </p>
-        </div>
-      </div>
+      {/* Live Log Stream */}
+      <LogTable projectId={projectId} />
     </div>
   );
 }

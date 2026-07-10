@@ -6,6 +6,9 @@ import { signJwt } from '../utils/jwt';
 import mongoose from 'mongoose';
 import { connectDB, disconnectDB } from '../config/database';
 import User from '../models/User';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+let mongod: MongoMemoryServer;
 
 describe('Socket.IO Authentication', () => {
   let io: Server;
@@ -17,6 +20,10 @@ describe('Socket.IO Authentication', () => {
   let port: number;
 
   beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    process.env.MONGODB_URI = mongod.getUri();
+    process.env.NODE_ENV = 'test';
+    
     await connectDB();
     
     // Create a mock user for testing
@@ -32,6 +39,9 @@ describe('Socket.IO Authentication', () => {
   afterAll(async () => {
     await User.deleteMany({ email: 'socketest@example.com' });
     await disconnectDB();
+    if (mongod) {
+      await mongod.stop();
+    }
   });
 
   beforeEach((done) => {
