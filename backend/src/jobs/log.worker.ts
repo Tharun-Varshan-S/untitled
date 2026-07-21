@@ -1,8 +1,12 @@
 import { Worker, Job, QueueEvents } from 'bullmq';
+import { Types } from 'mongoose';
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
 import { LOG_QUEUE_NAME } from './log.queue';
 import { LogIngestionJobData } from './log.producer';
+import * as logsRepo from '../repositories/logs.repository';
+import { broadcastNewLog } from '../socket/broadcast';
+import { broadcastAnalyticsUpdate } from '../socket/analytics';
 
 const parseRedisConnection = () => {
   try {
@@ -23,7 +27,7 @@ const parseRedisConnection = () => {
  * Worker processor function for log ingestion jobs.
  */
 export const processLogJob = async (job: Job<LogIngestionJobData>) => {
-  logger.info(`[Worker] Starting Job #${job.id} (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
+  logger.info(`[Worker] Processing Job #${job.id} (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
 
   // Step 1: Validate payload
   await job.updateProgress(25);
@@ -31,15 +35,34 @@ export const processLogJob = async (job: Job<LogIngestionJobData>) => {
     throw new Error(`Invalid log payload for job #${job.id}: missing projectId or message`);
   }
 
-  // Step 2: Simulate Failure for testing lifecycle if requested
-  if (job.data.simulateFailure && job.attemptsMade < 2) {
-    await job.updateProgress(50);
-    throw new Error(`Simulated transient error for job #${job.id} (Attempt ${job.attemptsMade + 1})`);
-  }
+  // Step 2: Persist to Database
+  await job.updateProgress(50);
+  const projectObjectId = new Types.ObjectId(job.data.projectId);
+  const created = await logsRepo.createLog({
+    projectId: projectObjectId,
+    level: job.data.level,
+    message: job.data.message,
+    service: job.data.service ?? 'default',
+    metadata: job.data.metadata ?? undefined,
+    timestamp: job.data.timestamp ? new Date(job.data.timestamp) : new Date(),
+  });
 
-  // Step 3: Processing & Persistence Simulation
+  // Step 3: Broadcast Real-time Updates
   await job.updateProgress(75);
-  await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate DB I/O delay
+  const formattedLog = {
+    id: created._id.toString(),
+    projectId: created.projectId.toString(),
+    level: created.level,
+    message: created.message,
+    service: created.service,
+    metadata: created.metadata,
+    timestamp: created.timestamp,
+    createdAt: created.createdAt,
+    updatedAt: created.updatedAt,
+  };
+
+  broadcastNewLog(job.data.projectId, formattedLog);
+  broadcastAnalyticsUpdate(job.data.projectId);
 
   // Step 4: Complete Job
   await job.updateProgress(100);
@@ -48,6 +71,7 @@ export const processLogJob = async (job: Job<LogIngestionJobData>) => {
     success: true,
     processedAt: new Date().toISOString(),
     jobId: job.id,
+    logId: formattedLog.id,
     projectId: job.data.projectId,
   };
 };

@@ -83,7 +83,7 @@ describe('Analytics — empty database', () => {
       .query({ projectId });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ totalLogs: 0, totalErrors: 0, totalWarnings: 0, services: 0 });
+    expect(res.body).toEqual({ totalLogs: 0, totalErrors: 0, totalWarnings: 0, services: 0, logsPerMinute: 0 });
   });
 
   it('GET /log-levels returns zeroes when no logs exist', async () => {
