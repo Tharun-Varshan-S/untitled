@@ -1,9 +1,9 @@
-import { Worker, Job, QueueEvents } from 'bullmq';
+import { Worker, Job, QueueEvents, UnrecoverableError } from 'bullmq';
 import { Types } from 'mongoose';
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
 import { LOG_QUEUE_NAME } from './log.queue';
-import { LogIngestionJobData } from './log.producer';
+import { validateLogJobPayload, LogJobPayloadV1 } from './payloads/log-payload.dto';
 import * as logsRepo from '../repositories/logs.repository';
 import { broadcastNewLog } from '../socket/broadcast';
 import { broadcastAnalyticsUpdate } from '../socket/analytics';
@@ -26,23 +26,29 @@ const parseRedisConnection = () => {
 /**
  * Worker processor function for log ingestion jobs.
  */
-export const processLogJob = async (job: Job<LogIngestionJobData>) => {
+export const processLogJob = async (job: Job<LogJobPayloadV1>) => {
   logger.info(`[Worker] Processing Job #${job.id} (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
 
-  // Step 1: Validate payload
+  // Step 1: Validate Job Payload Schema & Version
   await job.updateProgress(25);
-  if (!job.data.projectId || !job.data.message) {
-    throw new Error(`Invalid log payload for job #${job.id}: missing projectId or message`);
+  const validation = validateLogJobPayload(job.data);
+  if (!validation.isValid || !validation.data) {
+    const errorMsg = `Non-recoverable validation failure for #${job.id}: ${validation.errors?.join('; ')}`;
+    logger.error(`[Worker] ${errorMsg}`);
+    // Throwing UnrecoverableError prevents BullMQ from retrying invalid jobs
+    throw new UnrecoverableError(errorMsg);
   }
+
+  const payload = validation.data;
 
   // Step 2: Persist to Database
   await job.updateProgress(50);
-  const projectObjectId = new Types.ObjectId(job.data.projectId);
+  const projectObjectId = new Types.ObjectId(payload.projectId);
   const created = await logsRepo.createLog({
     projectId: projectObjectId,
-    level: job.data.level,
-    message: job.data.message,
-    service: job.data.service ?? 'default',
+    level: payload.level,
+    message: payload.message,
+    service: payload.service ?? 'default',
     metadata: job.data.metadata ?? undefined,
     timestamp: job.data.timestamp ? new Date(job.data.timestamp) : new Date(),
   });
@@ -79,7 +85,7 @@ export const processLogJob = async (job: Job<LogIngestionJobData>) => {
 /**
  * BullMQ Worker Instance
  */
-export const logWorker = new Worker<LogIngestionJobData>(
+export const logWorker = new Worker<LogJobPayloadV1>(
   LOG_QUEUE_NAME,
   processLogJob,
   {

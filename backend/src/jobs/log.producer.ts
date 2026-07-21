@@ -1,19 +1,9 @@
 import { logQueue, LOG_QUEUE_NAME } from './log.queue';
 import { logger } from '../utils/logger';
 import { JobsOptions } from 'bullmq';
+import { LogJobPayloadV1 } from './payloads/log-payload.dto';
 
-export interface LogIngestionJobData {
-  logId?: string;
-  projectId: string;
-  level: 'info' | 'warn' | 'error' | 'fatal' | 'debug';
-  message: string;
-  service?: string;
-  environment?: string;
-  source?: string;
-  metadata?: Record<string, unknown>;
-  timestamp?: string;
-  simulateFailure?: boolean;
-}
+export type LogIngestionJobData = Omit<LogJobPayloadV1, 'version'> & { version?: 1 };
 
 export const JOB_NAMES = {
   PROCESS_SINGLE_LOG: 'process-single-log',
@@ -28,7 +18,12 @@ export const addLogJob = async (
   opts?: JobsOptions
 ) => {
   try {
-    const job = await logQueue.add(JOB_NAMES.PROCESS_SINGLE_LOG, data, opts);
+    const payload: LogJobPayloadV1 = {
+      version: 1,
+      ...data,
+    };
+
+    const job = await logQueue.add(JOB_NAMES.PROCESS_SINGLE_LOG, payload, opts);
     logger.info(`[Producer] Enqueued job #${job.id} into queue '${LOG_QUEUE_NAME}'`);
     return job;
   } catch (error) {
