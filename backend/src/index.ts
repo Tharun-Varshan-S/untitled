@@ -3,7 +3,9 @@ import { config } from './config/env';
 import { logger } from './utils/logger';
 import app from './app';
 import { connectDB, disconnectDB } from './config/database';
+import { connectRedis, disconnectRedis } from './config/redis';
 import { initializeSocket, closeSocket } from './socket';
+
 const startServer = async (): Promise<http.Server> => {
   try {
     await connectDB();
@@ -11,6 +13,8 @@ const startServer = async (): Promise<http.Server> => {
     logger.error(`MongoDB connection failed: ${error instanceof Error ? error.message : String(error)}`);
     logger.warn('Server starting in degraded mode (Database offline).');
   }
+
+  await connectRedis();
 
   const server = http.createServer(app);
   await initializeSocket(server);
@@ -36,6 +40,12 @@ const startServer = async (): Promise<http.Server> => {
           await disconnectDB();
         } catch (disconnectError) {
           logger.error(`Error disconnecting MongoDB: ${disconnectError instanceof Error ? disconnectError.message : String(disconnectError)}`);
+        }
+
+        try {
+          await disconnectRedis();
+        } catch (redisError) {
+          logger.error(`Error disconnecting Redis: ${redisError instanceof Error ? redisError.message : String(redisError)}`);
         }
 
         process.exit(0);

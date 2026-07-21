@@ -28,6 +28,7 @@ export const config = {
   jwtSecret: jwtSecret || 'change_me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   mongoUri,
+  redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
   upload: {
     maxSizeMb: maxUploadSizeMb,
     maxSizeBytes: maxUploadSizeMb * 1024 * 1024,
