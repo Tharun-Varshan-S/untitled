@@ -8,7 +8,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import type { UploadResult } from '@/services/upload.service';
 import { useUploadFile } from '@/hooks/useUploadFile';
-import { useProjectStore } from '@/store/useProjectStore';
+import { useProjects } from '@/hooks/useProjects';
+import { useProjectStore } from '@/store';
 
 /**
  * Session-only upload record — persisted in component state for the current
@@ -27,8 +28,11 @@ export default function UploadsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const { projects, activeProject } = useProjectStore();
-  const [projectId, setProjectId] = useState(activeProject?.id || (projects.length > 0 ? projects[0].id : ''));
+  const { data: projects = [] } = useProjects();
+  const selectedProjectId = useProjectStore((state) => state.selectedProjectId);
+  const [projectId, setProjectId] = useState<string>('');
+
+  const currentProjectId = projectId || selectedProjectId || (projects.length > 0 ? projects[0].id : '');
 
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
 
@@ -65,15 +69,15 @@ export default function UploadsPage() {
   const handleUpload = async () => {
     if (!selectedFile) return;
 
-    if (!projectId.trim()) {
-      setUploadError('Please enter a Project ID before uploading.');
+    if (!currentProjectId.trim()) {
+      setUploadError('Please select a Project before uploading.');
       return;
     }
 
     setUploadError(null);
 
     try {
-      const result = await uploadFile({ file: selectedFile, projectId: projectId.trim() });
+      const result = await uploadFile({ file: selectedFile, projectId: currentProjectId.trim() });
 
       setHistory((prev) => [
         {
@@ -111,7 +115,7 @@ export default function UploadsPage() {
             </label>
             {projects.length > 0 ? (
               <select
-                value={projectId}
+                value={currentProjectId}
                 onChange={(e) => setProjectId(e.target.value)}
                 className="input-premium appearance-none"
               >

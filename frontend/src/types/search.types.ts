@@ -1,5 +1,6 @@
 export interface LogResponse {
   _id: string;
+  id?: string;
   projectId: string;
   level: string;
   message: string;

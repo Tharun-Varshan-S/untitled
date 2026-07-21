@@ -44,7 +44,7 @@ export const LogDetailPanel: React.FC<LogDetailPanelProps> = ({ log, onClose }) 
             <div className="space-y-1">
               <span className="text-xs font-medium text-[hsl(var(--text-muted))] uppercase tracking-wider">Timestamp</span>
               <p className="text-sm text-[hsl(var(--text-primary))] font-mono">
-                {new Date(log.timestamp).toLocaleString()}
+                {new Date(log.timestamp || log.createdAt).toLocaleString()}
               </p>
             </div>
             
@@ -65,7 +65,7 @@ export const LogDetailPanel: React.FC<LogDetailPanelProps> = ({ log, onClose }) 
 
             <div className="space-y-1">
               <span className="text-xs font-medium text-[hsl(var(--text-muted))] uppercase tracking-wider">Service</span>
-              <p className="text-sm text-[hsl(var(--text-primary))] font-mono">{log.service}</p>
+              <p className="text-sm text-[hsl(var(--text-primary))] font-mono">{log.service || 'N/A'}</p>
             </div>
           </div>
 

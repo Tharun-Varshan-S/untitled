@@ -11,8 +11,12 @@ export interface SharedLogResponse {
   projectId: string;
   level: string;
   message: string;
+  service?: string;
+  environment?: string;
+  source?: string;
   metadata?: Record<string, unknown> | undefined;
   createdAt: string | Date;
+  timestamp?: string | Date;
 }
 
 export interface SharedAnalyticsUpdatePayload {
