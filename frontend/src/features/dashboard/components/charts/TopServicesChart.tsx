@@ -32,7 +32,7 @@ export const TopServicesChart = React.memo(({ data, isLoading }: TopServicesChar
       {isLoading && <LoadingChart />}
       {!isLoading && !hasData && <EmptyChart message="No services data available" />}
       {!isLoading && hasData && (
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250}>
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border-subtle))" vertical={false} />
             <XAxis
