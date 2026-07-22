@@ -11,7 +11,8 @@ export interface ApiKey {
   createdAt: string;
   updatedAt: string;
   // This is only returned ONCE when the key is created
-  key?: string; 
+  key?: string;
+  rawKey?: string;
 }
 
 export interface CreateApiKeyPayload {

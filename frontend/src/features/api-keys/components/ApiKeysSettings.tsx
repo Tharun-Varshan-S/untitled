@@ -101,8 +101,9 @@ function CreateApiKeyModal({ onClose, projectId }: { onClose: () => void, projec
     try {
       setError(null);
       const res = await createApiKey({ name: name.trim() });
-      if (res.key) {
-        setNewKey(res.key);
+      const generatedKey = res.rawKey || res.key;
+      if (generatedKey) {
+        setNewKey(generatedKey);
       } else {
         onClose(); // Fallback if API doesn't return key for some reason
       }
@@ -111,10 +112,13 @@ function CreateApiKeyModal({ onClose, projectId }: { onClose: () => void, projec
     }
   };
 
+  const [copied, setCopied] = useState(false);
+
   const copyToClipboard = () => {
     if (newKey) {
       navigator.clipboard.writeText(newKey);
-      // Could show a toast here
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
     }
   };
 
@@ -131,17 +135,33 @@ function CreateApiKeyModal({ onClose, projectId }: { onClose: () => void, projec
                   Please copy this key now. You will not be able to see it again!
                 </p>
              </div>
-             <div className="flex items-center gap-2 mb-6">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={newKey} 
-                  className="input-premium flex-1 font-mono text-sm" 
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <button onClick={copyToClipboard} className="btn-secondary" title="Copy to clipboard">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                </button>
+             <div className="space-y-2 mb-6">
+               <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={newKey} 
+                    className="input-premium flex-1 font-mono text-sm" 
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <button 
+                    onClick={copyToClipboard} 
+                    className={`btn-secondary transition-all ${copied ? '!border-[hsl(var(--success))] !text-[hsl(var(--success))] bg-[hsl(var(--success)/0.1)]' : ''}`}
+                    title="Copy to clipboard"
+                  >
+                    {copied ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                    )}
+                  </button>
+               </div>
+               {copied && (
+                 <div className="text-xs text-[hsl(var(--success))] font-medium flex items-center gap-1.5 animate-fadeIn">
+                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                   Copied to clipboard!
+                 </div>
+               )}
              </div>
              <div className="flex justify-end">
                 <button onClick={onClose} className="btn-primary">Done</button>

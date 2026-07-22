@@ -25,7 +25,7 @@ export const createApiKeyController = async (req: Request, res: Response) => {
 
   logger.info(`API key created ${result.id} for project ${projectId} by user ${user.id}`);
 
-  res.status(201).json({ success: true, data: { id: result.id, name: result.name, prefix: result.prefix, rawKey: result.rawKey } });
+  res.status(201).json({ success: true, data: { id: result.id, name: result.name, prefix: result.prefix, rawKey: result.rawKey, key: result.rawKey } });
 };
 
 export const listApiKeysController = async (req: Request, res: Response) => {
