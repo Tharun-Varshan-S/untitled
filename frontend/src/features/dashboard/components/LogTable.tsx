@@ -13,11 +13,12 @@ interface LogTableProps {
 export const LogTable: React.FC<LogTableProps> = ({ projectId }) => {
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
 
-  // Fetch initial logs (most recent 50)
+  // Fetch initial logs (most recent 50) and auto-refetch every 3s as fallback
   const { data, isLoading, error } = useQuery({
     queryKey: ['logs', projectId],
     queryFn: () => searchApi.searchLogs({ projectId, limit: 50 }),
     enabled: !!projectId,
+    refetchInterval: 3000,
   });
 
   // Subscribe to real-time updates
