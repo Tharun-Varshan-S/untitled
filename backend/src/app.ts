@@ -6,11 +6,16 @@ import { config } from './config/env';
 import { registerRoutes } from './api';
 import { errorMiddleware } from './middleware/error.middleware';
 import { requestLoggingMiddleware } from './middleware/requestLogging.middleware';
+import { serverAdapter } from './jobs/board';
 
 const app: Express = express();
 
-// Security headers
-app.use(helmet());
+// Security headers (Configure Content Security Policy to allow inline styles/scripts for Bull Board dashboard)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 
 // Response compression (gzip)
 app.use(compression());
@@ -30,6 +35,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '50kb' }));
+
+// Mount Bull Board Dashboard UI at /admin/queues
+app.use('/admin/queues', serverAdapter.getRouter());
 
 registerRoutes(app);
 app.use(errorMiddleware);

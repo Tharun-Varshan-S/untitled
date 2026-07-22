@@ -13,7 +13,7 @@ class ConnectionService {
   private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
 
   constructor() {
-    const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+    const rawUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     
     // Extract the origin to avoid connecting to the '/api' namespace
     try {
@@ -24,14 +24,20 @@ class ConnectionService {
     
     this.socket = io(this.backendUrl, {
       autoConnect: false,
-      withCredentials: true
+      withCredentials: true,
+      transports: ['websocket', 'polling'], // Prefer WebSocket transport first
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     this.setupInternalListeners();
   }
 
   private setupInternalListeners() {
-    this.socket.on('connect', () => this.updateStatus('connected'));
+    this.socket.on('connect', () => {
+      this.updateStatus('connected');
+    });
+
     this.socket.on('disconnect', (reason) => {
       if (reason === 'io server disconnect' || reason === 'io client disconnect') {
         this.updateStatus('disconnected');
@@ -39,9 +45,16 @@ class ConnectionService {
         this.updateStatus('reconnecting');
       }
     });
+
     this.socket.on('connect_error', (error) => {
-      console.error('[Socket] Connection error:', error.message);
-      this.updateStatus('error');
+      const isAuthError = error.message.includes('Authentication error') || error.message.includes('Token');
+      if (isAuthError) {
+        // Disconnect immediately on auth rejection to avoid polling error loop
+        this.socket.disconnect();
+        this.updateStatus('disconnected');
+      } else {
+        this.updateStatus('error');
+      }
     });
   }
 
@@ -53,21 +66,28 @@ class ConnectionService {
   }
 
   public connect(): void {
+    if (typeof window === 'undefined') return;
+
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    
+    // Do not attempt connection if unauthenticated
+    if (!token) {
+      this.updateStatus('disconnected');
+      return;
+    }
+
+    this.socket.auth = { token };
+
     if (!this.socket.connected) {
       this.updateStatus('connecting');
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY);
-        if (token) {
-          this.socket.auth = { token };
-        }
-      }
       this.socket.connect();
     }
   }
 
   public disconnect(): void {
-    if (this.socket && this.socket.connected) {
+    if (this.socket) {
       this.socket.disconnect();
+      this.updateStatus('disconnected');
     }
   }
 
