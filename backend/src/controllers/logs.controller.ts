@@ -33,7 +33,8 @@ export const ingestLogController = async (req: Request, res: Response) => {
   const payload = validateLogPayload(req.body);
   const result = await ingestLog(projectId, payload);
 
-  res.status(201).json({ success: true, data: result });
+  // Return HTTP 202 Accepted for asynchronous queue processing
+  res.status(202).json({ success: true, message: 'Log enqueued for asynchronous processing', data: result });
 };
 
 export const bulkIngestLogsController = async (req: Request, res: Response) => {
@@ -41,7 +42,8 @@ export const bulkIngestLogsController = async (req: Request, res: Response) => {
   const payload = validateBulkLogPayload(req.body);
   const result = await bulkIngestLogs(projectId, payload);
 
-  res.status(201).json({ success: true, data: result });
+  // Return HTTP 202 Accepted for asynchronous batch processing
+  res.status(202).json({ success: true, message: 'Log batch enqueued for asynchronous processing', data: result });
 };
 
 export const listLogsController = async (req: Request, res: Response) => {

@@ -3,8 +3,7 @@ import { AppError } from '../utils/AppError';
 import { LogLevel } from '../models/Log';
 import { LogRequest, LogResponse, PaginatedLogs } from '../types/logs.types';
 import * as logsRepo from '../repositories/logs.repository';
-import { broadcastNewLog } from '../socket/broadcast';
-import { broadcastAnalyticsUpdate } from '../socket/analytics';
+import { addLogJob, addLogBatchJob, LogIngestionJobData } from '../jobs/log.producer';
 
 const mapLog = (doc: { _id: any; projectId: any; level: LogLevel; message: string; service: string; metadata?: Record<string, unknown> | undefined; timestamp: Date; createdAt: Date; updatedAt: Date }): LogResponse => ({
   id: doc._id.toString(),
@@ -18,51 +17,52 @@ const mapLog = (doc: { _id: any; projectId: any; level: LogLevel; message: strin
   updatedAt: doc.updatedAt,
 });
 
-export const ingestLog = async (projectId: string, payload: LogRequest): Promise<LogResponse> => {
-  const projectObjectId = new Types.ObjectId(projectId);
-
-  const created = await logsRepo.createLog({
-    projectId: projectObjectId,
+/**
+ * Ingest a single log entry into LogLens by enqueuing into BullMQ.
+ * Returns an asynchronous acknowledgment payload with Job ID.
+ */
+export const ingestLog = async (projectId: string, payload: LogRequest): Promise<{ status: string; jobId: string; projectId: string }> => {
+  const jobData: LogIngestionJobData = {
+    projectId,
     level: payload.level,
     message: payload.message,
-    service: payload.service,
-    metadata: payload.metadata ?? undefined,
-    timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
-  });
+    service: payload.service ?? 'default',
+    timestamp: payload.timestamp ? new Date(payload.timestamp).toISOString() : new Date().toISOString(),
+    ...(payload.metadata ? { metadata: payload.metadata } : {}),
+  };
 
-  const response = mapLog(created);
-  broadcastNewLog(projectId, response);
-  broadcastAnalyticsUpdate(projectId);
-  return response;
+  const job = await addLogJob(jobData);
+
+  return {
+    status: 'queued',
+    jobId: job.id ?? 'unknown',
+    projectId,
+  };
 };
 
-export const bulkIngestLogs = async (projectId: string, payload: LogRequest[]): Promise<{ totalReceived: number; totalInserted: number }> => {
-  const projectObjectId = new Types.ObjectId(projectId);
+/**
+ * Bulk ingest log entries into LogLens by enqueuing batch into BullMQ via addBulk().
+ */
+export const bulkIngestLogs = async (projectId: string, payload: LogRequest[]): Promise<{ status: string; enqueuedCount: number; projectId: string }> => {
   if (payload.length === 0) {
     throw new AppError('No logs to insert', 400, 'LOG_BULK_EMPTY');
   }
 
-  const documents = payload.map((item) => ({
-    projectId: projectObjectId,
+  const jobItems: LogIngestionJobData[] = payload.map((item) => ({
+    projectId,
     level: item.level,
     message: item.message,
-    service: item.service,
-    metadata: item.metadata ?? undefined,
-    timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
+    service: item.service ?? 'default',
+    timestamp: item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString(),
+    ...(item.metadata ? { metadata: item.metadata } : {}),
   }));
 
-  const inserted = await logsRepo.insertLogs(documents);
-
-  // Broadcast each new log
-  inserted.forEach((doc) => {
-    broadcastNewLog(projectId, mapLog(doc));
-  });
-
-  broadcastAnalyticsUpdate(projectId);
+  const enqueuedJobs = await addLogBatchJob(jobItems);
 
   return {
-    totalReceived: payload.length,
-    totalInserted: inserted.length,
+    status: 'queued',
+    enqueuedCount: enqueuedJobs.length,
+    projectId,
   };
 };
 

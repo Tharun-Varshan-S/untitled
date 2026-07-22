@@ -39,6 +39,32 @@ export const addLogJob = async (
 };
 
 /**
+ * Enqueue a batch of log processing jobs atomically using BullMQ addBulk().
+ */
+export const addLogBatchJob = async (
+  logs: LogIngestionJobData[],
+  opts?: JobsOptions
+) => {
+  try {
+    const bulkJobs = logs.map((data) => ({
+      name: JOB_NAMES.PROCESS_SINGLE_LOG,
+      data: {
+        version: 1 as const,
+        ...data,
+      },
+      ...(opts ? { opts } : {}),
+    }));
+
+    const enqueuedJobs = await logQueue.addBulk(bulkJobs);
+    logger.info(`[Producer] Batch enqueued ${enqueuedJobs.length} log jobs into queue '${LOG_QUEUE_NAME}'`);
+    return enqueuedJobs;
+  } catch (error) {
+    logger.error(`[Producer] Failed to bulk enqueue log jobs: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+};
+
+/**
  * Enqueue a generic delayed job with an explicit delay in milliseconds.
  */
 export const addDelayedJob = async <T>(

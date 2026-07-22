@@ -1,4 +1,4 @@
-import { Worker, Job, QueueEvents, UnrecoverableError } from 'bullmq';
+import { Worker, Job, QueueEvents, UnrecoverableError, WorkerOptions } from 'bullmq';
 import { Types } from 'mongoose';
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
@@ -35,12 +35,12 @@ const parseRedisConnection = () => {
 /**
  * Handle standard log processing jobs (Immediate)
  */
-const handleSingleLogJob = async (job: Job<LogJobPayloadV1>) => {
+const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) => {
   await job.updateProgress(25);
   const validation = validateLogJobPayload(job.data);
   if (!validation.isValid || !validation.data) {
     const errorMsg = `Non-recoverable validation failure for #${job.id}: ${validation.errors?.join('; ')}`;
-    logger.error(`[Worker] ${errorMsg}`);
+    logger.error(`[Worker ${workerId || 'Default'}] ${errorMsg}`);
     throw new UnrecoverableError(errorMsg);
   }
 
@@ -79,6 +79,7 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>) => {
 
   return {
     success: true,
+    processedBy: workerId || `PID-${process.pid}`,
     processedAt: new Date().toISOString(),
     jobId: job.id,
     logId: formattedLog.id,
@@ -89,8 +90,8 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>) => {
 /**
  * Handle Delayed AI Analysis jobs
  */
-const handleAiAnalysisJob = async (job: Job<AiAnalysisJobPayloadV1>) => {
-  logger.info(`🤖 [Worker: AI Analysis] Running delayed AI Root-Cause Analysis for Project ${job.data.projectId}`);
+const handleAiAnalysisJob = async (job: Job<AiAnalysisJobPayloadV1>, workerId?: string) => {
+  logger.info(`🤖 [Worker ${workerId || 'Default'}: AI Analysis] Running delayed AI Root-Cause Analysis for Project ${job.data.projectId}`);
   await job.updateProgress(50);
   await new Promise((resolve) => setTimeout(resolve, 300));
   await job.updateProgress(100);
@@ -98,6 +99,7 @@ const handleAiAnalysisJob = async (job: Job<AiAnalysisJobPayloadV1>) => {
   return {
     success: true,
     type: 'ai-analysis',
+    processedBy: workerId || `PID-${process.pid}`,
     projectId: job.data.projectId,
     summary: 'AI analysis aggregated log patterns and detected zero critical anomalies.',
     completedAt: new Date().toISOString(),
@@ -107,8 +109,8 @@ const handleAiAnalysisJob = async (job: Job<AiAnalysisJobPayloadV1>) => {
 /**
  * Handle Delayed Notification jobs
  */
-const handleNotificationJob = async (job: Job<NotificationJobPayloadV1>) => {
-  logger.info(`🔔 [Worker: Notification] Dispatching delayed alert to ${job.data.recipient} (${job.data.severity})`);
+const handleNotificationJob = async (job: Job<NotificationJobPayloadV1>, workerId?: string) => {
+  logger.info(`🔔 [Worker ${workerId || 'Default'}: Notification] Dispatching delayed alert to ${job.data.recipient} (${job.data.severity})`);
   await job.updateProgress(50);
   await new Promise((resolve) => setTimeout(resolve, 200));
   await job.updateProgress(100);
@@ -116,6 +118,7 @@ const handleNotificationJob = async (job: Job<NotificationJobPayloadV1>) => {
   return {
     success: true,
     type: 'notification-dispatch',
+    processedBy: workerId || `PID-${process.pid}`,
     recipient: job.data.recipient,
     channel: job.data.channel,
     dispatchedAt: new Date().toISOString(),
@@ -125,19 +128,20 @@ const handleNotificationJob = async (job: Job<NotificationJobPayloadV1>) => {
 /**
  * Handle Repeatable Collector Health Check Job
  */
-const handleCollectorHealthCheckJob = async (job: Job<HealthCheckJobPayloadV1>) => {
-  logger.info(`💓 [Worker: Health Check] Executing repeatable collector ping check...`);
+const handleCollectorHealthCheckJob = async (job: Job<HealthCheckJobPayloadV1>, workerId?: string) => {
+  logger.info(`💓 [Worker ${workerId || 'Default'}: Health Check] Executing repeatable collector ping check...`);
   await job.updateProgress(50);
 
   const targets = job.data.targetServices ?? ['api-gateway', 'log-ingestor'];
   const results = targets.map((service) => ({ service, status: 'healthy', latencyMs: Math.floor(Math.random() * 10) + 2 }));
 
   await job.updateProgress(100);
-  logger.info(`💓 [Worker: Health Check] Health check complete. ${results.length} services verified healthy.`);
+  logger.info(`💓 [Worker ${workerId || 'Default'}: Health Check] Health check complete. ${results.length} services verified healthy.`);
 
   return {
     success: true,
     type: 'health-check',
+    processedBy: workerId || `PID-${process.pid}`,
     results,
     checkedAt: new Date().toISOString(),
   };
@@ -146,19 +150,20 @@ const handleCollectorHealthCheckJob = async (job: Job<HealthCheckJobPayloadV1>) 
 /**
  * Handle Repeatable Analytics Aggregation Job
  */
-const handleAnalyticsAggregationJob = async (job: Job<AnalyticsAggregationJobPayloadV1>) => {
-  logger.info(`📊 [Worker: Analytics] Executing periodic log analytics aggregation...`);
+const handleAnalyticsAggregationJob = async (job: Job<AnalyticsAggregationJobPayloadV1>, workerId?: string) => {
+  logger.info(`📊 [Worker ${workerId || 'Default'}: Analytics] Executing periodic log analytics aggregation...`);
   await job.updateProgress(30);
 
   // Simulated metrics calculation
   await new Promise((resolve) => setTimeout(resolve, 200));
   await job.updateProgress(100);
 
-  logger.info(`📊 [Worker: Analytics] Analytics pre-computed & cached successfully.`);
+  logger.info(`📊 [Worker ${workerId || 'Default'}: Analytics] Analytics pre-computed & cached successfully.`);
 
   return {
     success: true,
     type: 'analytics-aggregation',
+    processedBy: workerId || `PID-${process.pid}`,
     granularity: job.data.granularity ?? '1m',
     aggregatedAt: new Date().toISOString(),
   };
@@ -167,20 +172,21 @@ const handleAnalyticsAggregationJob = async (job: Job<AnalyticsAggregationJobPay
 /**
  * Handle Repeatable Log Cleanup Job
  */
-const handleLogCleanupJob = async (job: Job<LogCleanupJobPayloadV1>) => {
+const handleLogCleanupJob = async (job: Job<LogCleanupJobPayloadV1>, workerId?: string) => {
   const retentionDays = job.data.retentionDays ?? 30;
-  logger.info(`🧹 [Worker: Log Cleanup] Running daily retention purge for logs older than ${retentionDays} days...`);
+  logger.info(`🧹 [Worker ${workerId || 'Default'}: Log Cleanup] Running daily retention purge for logs older than ${retentionDays} days...`);
   
   await job.updateProgress(50);
   // Simulated purge
   await new Promise((resolve) => setTimeout(resolve, 300));
   await job.updateProgress(100);
 
-  logger.info(`🧹 [Worker: Log Cleanup] Purged 0 expired logs.`);
+  logger.info(`🧹 [Worker ${workerId || 'Default'}: Log Cleanup] Purged 0 expired logs.`);
 
   return {
     success: true,
     type: 'log-cleanup',
+    processedBy: workerId || `PID-${process.pid}`,
     retentionDays,
     purgedAt: new Date().toISOString(),
   };
@@ -189,66 +195,81 @@ const handleLogCleanupJob = async (job: Job<LogCleanupJobPayloadV1>) => {
 /**
  * Master Worker processor router function for BullMQ jobs.
  */
-export const processLogJob = async (job: Job<any>) => {
-  logger.info(`[Worker] Processing Job #${job.id} ('${job.name}') (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
+export const processLogJob = async (job: Job<any>, workerId?: string) => {
+  logger.info(`[Worker ${workerId || 'Default'}] Processing Job #${job.id} ('${job.name}') (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
 
   switch (job.name) {
     case JOB_NAMES.SCHEDULED_AI_ANALYSIS:
-      return handleAiAnalysisJob(job);
+      return handleAiAnalysisJob(job, workerId);
 
     case JOB_NAMES.DELAYED_NOTIFICATION:
-      return handleNotificationJob(job);
+      return handleNotificationJob(job, workerId);
 
     case JOB_NAMES.COLLECTOR_HEALTH_CHECK:
-      return handleCollectorHealthCheckJob(job);
+      return handleCollectorHealthCheckJob(job, workerId);
 
     case JOB_NAMES.ANALYTICS_AGGREGATION:
-      return handleAnalyticsAggregationJob(job);
+      return handleAnalyticsAggregationJob(job, workerId);
 
     case JOB_NAMES.LOG_CLEANUP:
-      return handleLogCleanupJob(job);
+      return handleLogCleanupJob(job, workerId);
 
     case JOB_NAMES.PROCESS_SINGLE_LOG:
     default:
-      return handleSingleLogJob(job);
+      return handleSingleLogJob(job, workerId);
   }
 };
 
 /**
- * BullMQ Worker Instance
+ * Factory function to spawn independent, configurable BullMQ Worker instances.
+ * Enables horizontal scaling across multiple Node processes or servers.
  */
-export const logWorker = new Worker(
-  LOG_QUEUE_NAME,
-  processLogJob,
-  {
+export const createLogWorker = (workerId?: string, options?: Partial<WorkerOptions>): Worker => {
+  const concurrency = Number(process.env.WORKER_CONCURRENCY) || 10;
+  const instanceId = workerId || `Worker-PID-${process.pid}`;
+
+  const defaultOptions: WorkerOptions = {
     connection: parseRedisConnection(),
-    concurrency: 5,
-  }
-);
+    concurrency,
+    lockDuration: 30000,       // 30-second lock window per job
+    stalledInterval: 30000,    // Check for stalled jobs every 30s
+    maxStalledCount: 2,        // Re-claim stalled jobs up to 2 times
+  };
+
+  const worker = new Worker(
+    LOG_QUEUE_NAME,
+    (job) => processLogJob(job, instanceId),
+    {
+      ...defaultOptions,
+      ...options,
+    }
+  );
+
+  worker.on('active', (job) => {
+    logger.info(`⚡ [Event: Active] [${instanceId}] Job #${job.id} ('${job.name}') active on worker instance.`);
+  });
+
+  worker.on('completed', (job, result) => {
+    logger.info(`✅ [Event: Completed] [${instanceId}] Job #${job.id} ('${job.name}') completed. Result: ${JSON.stringify(result)}`);
+  });
+
+  worker.on('failed', (job, err) => {
+    logger.error(`❌ [Event: Failed] [${instanceId}] Job #${job?.id} ('${job?.name}') failed with error: "${err.message}". Attempts: ${job?.attemptsMade}/${job?.opts.attempts}`);
+  });
+
+  return worker;
+};
+
+/**
+ * Singleton Default Worker Instance (for API server processes)
+ */
+export const logWorker = createLogWorker('Default-Worker');
 
 /**
  * QueueEvents instance to observe real-time queue events globally.
  */
 export const logQueueEvents = new QueueEvents(LOG_QUEUE_NAME, {
   connection: parseRedisConnection(),
-});
-
-// ── Worker & Queue Event Listeners for Lifecycle Monitoring ──
-
-logWorker.on('active', (job) => {
-  logger.info(`⚡ [Event: Active] Job #${job.id} ('${job.name}') is active and being processed by worker.`);
-});
-
-logWorker.on('completed', (job, result) => {
-  logger.info(`✅ [Event: Completed] Job #${job.id} ('${job.name}') completed successfully. Result: ${JSON.stringify(result)}`);
-});
-
-logWorker.on('failed', (job, err) => {
-  logger.error(`❌ [Event: Failed] Job #${job?.id} ('${job?.name}') failed with error: "${err.message}". Attempts: ${job?.attemptsMade}/${job?.opts.attempts}`);
-});
-
-logWorker.on('progress', (job, progress) => {
-  logger.info(`📈 [Event: Progress] Job #${job.id} progress updated: ${progress}%`);
 });
 
 logQueueEvents.on('waiting', ({ jobId }) => {
