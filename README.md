@@ -1,10 +1,10 @@
-# 🔍 LogLens – Beginner's Handbook & Technical Guide
+# LogLens – Beginner's Handbook & Technical Guide
 
 > **Production-grade AI-Powered Log Monitoring, Real-time Observability, and Distributed Queue Analysis Platform.**
 
 ---
 
-## 📖 Welcome to LogLens!
+## Welcome to LogLens!
 
 **LogLens** is a full-stack, enterprise-grade log observability platform built to ingest, process, aggregate, and analyze high-volume log streams in real time. 
 
@@ -12,7 +12,7 @@ If you are a beginner backend or full-stack developer, this **Handbook** will wa
 
 ---
 
-## 🎯 What Problem Does LogLens Solve?
+## What Problem Does LogLens Solve?
 
 When software applications scale to millions of users, microservices generate millions of log lines per minute. Processing these logs synchronously inside an HTTP request loop crashes web servers and creates extreme latency.
 
@@ -24,32 +24,32 @@ When software applications scale to millions of users, microservices generate mi
 
 ---
 
-## 🏗️ High-Level System Architecture
+## High-Level System Architecture
 
 ```mermaid
 graph TD
-    Client[📱 Web Client - Next.js 16] <-->|REST API & WebSockets| Gateway[⚡ Node.js Express Backend]
+    Client[Web Client - Next.js 16] <-->|REST API & WebSockets| Gateway[Node.js Express Backend]
     
     subgraph Ingestion & Queue Pipeline [Phase P: Distributed Async Queue]
-        Gateway -->|1. Enqueue Payload| Queue[🔴 BullMQ Log Ingestion Queue]
-        Queue <-->|State & Storage| Redis[(📦 Redis Server)]
-        Worker[⚙️ BullMQ Worker Processes] -->|2. Pull Jobs| Queue
+        Gateway -->|1. Enqueue Payload| Queue[BullMQ Log Ingestion Queue]
+        Queue <-->|State & Storage| Redis[(Redis Server)]
+        Worker[BullMQ Worker Processes] -->|2. Pull Jobs| Queue
     end
     
     subgraph Data & Storage Layer
-        Worker -->|3. Persist Logs| Mongo[(🍃 MongoDB Database)]
+        Worker -->|3. Persist Logs| Mongo[(MongoDB Database)]
     end
     
     subgraph Real-Time & AI Subsystems
-        Worker -->|4. Broadcast Log Event| Socket[⚡ Socket.IO Server]
+        Worker -->|4. Broadcast Log Event| Socket[Socket.IO Server]
         Socket -->|5. Push Stream| Client
-        Worker -->|6. Debounced AI Task| AI[🤖 AI Root Cause Engine]
+        Worker -->|6. Debounced AI Task| AI[AI Root Cause Engine]
     end
 ```
 
 ---
 
-## ⚡ Background Queue Architecture (Phase P Pipeline)
+## Background Queue Architecture (Phase P Pipeline)
 
 ```mermaid
 flowchart LR
@@ -71,7 +71,7 @@ flowchart LR
 
 ---
 
-## 🛠️ Complete Tech Stack
+## Complete Tech Stack
 
 ### Backend Infrastructure (`/backend`)
 - **Runtime**: Node.js (TypeScript)
@@ -96,7 +96,7 @@ flowchart LR
 
 ---
 
-## 📂 Project Directory Structure (Handbook & Map)
+## Project Directory Structure (Handbook & Map)
 
 ```
 loglens/
@@ -110,7 +110,7 @@ loglens/
 │   │   ├── api/                   <-- Express HTTP Route Controllers & Handlers
 │   │   ├── config/                <-- Environment Variable loaders & Redis config
 │   │   ├── controllers/           <-- Request/Response controllers (Auth, Ingestion, Analytics)
-│   │   ├── jobs/                  <-- ⚡ Phase P Distributed Queue Architecture
+│   │   ├── jobs/                  <-- Phase P Distributed Queue Architecture
 │   │   │   ├── config/            <-- Delay, Retry, and Cron Scheduler Presets
 │   │   │   │   ├── delay.config.ts
 │   │   │   │   ├── retry.config.ts
@@ -150,7 +150,7 @@ loglens/
 
 ---
 
-## 🎓 Beginner Concepts Guide
+## Beginner Concepts Guide
 
 ### 1. Job Lifecycle in BullMQ
 Every job enqueued in LogLens moves through distinct lifecycle states:
@@ -168,7 +168,7 @@ If a job payload fails schema validation (e.g. invalid version or missing requir
 
 ---
 
-## ⚡ Quickstart Guide: Running LogLens Locally
+## Quickstart Guide: Running LogLens Locally
 
 ### Prerequisites
 Make sure you have the following installed on your machine:
@@ -246,7 +246,7 @@ npm run dev
 
 ---
 
-## 🧪 Testing & Verification Suite
+## Testing & Verification Suite
 
 LogLens includes comprehensive integration and automated test suites.
 
@@ -297,15 +297,15 @@ npx vitest run
 
 ---
 
-## 📈 Implementation Phases Completed
+## Implementation Phases Completed
 
-- ✅ **Phase A-E**: Authentication (JWT), MongoDB Schemas, Projects & API Key Hashing.
-- ✅ **Phase F-G**: Ingestion Engine & Log Parsing Pipeline.
-- ✅ **Phase H**: Log Analytics & Aggregation Engine.
-- ✅ **Phase I-K**: Next.js 16 Migration, TanStack Query (Server State), Zustand (UI State).
-- ✅ **Phase L-M**: Real-Time Dashboard UI & Recharts Data Visualization.
-- ✅ **Phase N**: Horizontal Socket.IO Infrastructure & Secure WebSocket Room Broadcasting.
-- ✅ **Phase P (Completed)**: Distributed Task Queue Architecture (BullMQ & Redis)
+- **Phase A-E**: Authentication (JWT), MongoDB Schemas, Projects & API Key Hashing.
+- **Phase F-G**: Ingestion Engine & Log Parsing Pipeline.
+- **Phase H**: Log Analytics & Aggregation Engine.
+- **Phase I-K**: Next.js 16 Migration, TanStack Query (Server State), Zustand (UI State).
+- **Phase L-M**: Real-Time Dashboard UI & Recharts Data Visualization.
+- **Phase N**: Horizontal Socket.IO Infrastructure & Secure WebSocket Room Broadcasting.
+- **Phase P (Completed)**: Distributed Task Queue Architecture (BullMQ & Redis)
   - **P1**: Redis Connection Setup & Ping Health Check
   - **P2**: Production Queue Instance (`log-ingestion`)
   - **P3-P4**: Log Producer & Concurrent Worker Processors
@@ -319,7 +319,7 @@ npx vitest run
 
 ---
 
-## 📜 API & Event Reference for Developers
+## API & Event Reference for Developers
 
 ### REST Ingestion Endpoint
 `POST /api/v1/projects/:id/logs`
@@ -365,5 +365,5 @@ npx vitest run
 
 ---
 
-## 🤝 Contributing & Support
-Feel free to open issues or submit pull requests to enhance LogLens. Happy coding! 🚀
+## Contributing & Support
+Feel free to open issues or submit pull requests to enhance LogLens. Happy coding!
