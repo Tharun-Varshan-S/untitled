@@ -17,7 +17,7 @@ If you are a beginner backend or full-stack developer, this **Handbook** will wa
 When software applications scale to millions of users, microservices generate millions of log lines per minute. Processing these logs synchronously inside an HTTP request loop crashes web servers and creates extreme latency.
 
 **LogLens solves this using an Asynchronous Distributed Architecture**:
-1. **Instant Ingestion**: Log requests are received by the API and immediately enqueued into **Redis / BullMQ** in under `5ms`.
+1. **Instant Ingestion**: Log requests are received by the API and immediately enqueued into **Redis / BullMQ** in under `5ms` (HTTP 202 Accepted).
 2. **Background Processing**: Independent worker nodes pull jobs from the queue, persist them to **MongoDB**, and calculate analytics without blocking user requests.
 3. **AI Root-Cause Analysis**: High-severity error spikes are debounced and processed by AI models to identify bug root causes automatically.
 4. **Real-time Streaming**: **Socket.IO** broadcasts new logs and metrics to the **Next.js** web dashboard instantly.
@@ -62,7 +62,7 @@ flowchart LR
     Delayed -->|Timestamp Reached| Wait
     Scheduler -->|Interval Tick| Wait
     
-    Wait -->|Dequeue| Worker[BullMQ Worker]
+    Wait -->|Dequeue| Worker[BullMQ Worker Cluster]
     
     Worker -->|Success| Complete[Completed State]
     Worker -->|Validation Fail| Fatal[UnrecoverableError -> Failed]
@@ -77,6 +77,7 @@ flowchart LR
 - **Runtime**: Node.js (TypeScript)
 - **API Framework**: Express.js
 - **Task Queue & Scheduling**: BullMQ v5 & ioredis
+- **Queue Monitoring**: Bull Board (`@bull-board/express`)
 - **In-Memory Cache & Message Broker**: Redis 7+
 - **Primary Database**: MongoDB (Mongoose ORM)
 - **Real-Time Communication**: Socket.IO (with Redis Adapter for horizontal scaling)
@@ -118,15 +119,21 @@ loglens/
 │   │   │   ├── log.queue.ts       <-- BullMQ Queue instance ('log-ingestion')
 │   │   │   ├── log.producer.ts    <-- Enqueue helper functions (Immediate, Delayed, Scheduled)
 │   │   │   ├── log.scheduler.ts   <-- Job Scheduler registration & management
-│   │   │   ├── log.worker.ts      <-- Worker processor router & handlers
-│   │   │   ├── test-delayed-jobs.ts    <-- Interactive Delayed Job test script
-│   │   │   └── test-repeatable-jobs.ts <-- Interactive Repeatable Job test script
+│   │   │   ├── log.worker.ts      <-- Worker processor router & cluster factory
+│   │   │   ├── log.monitoring.ts  <-- Inspection APIs & Metric calculation
+│   │   │   ├── board.ts           <-- Bull Board Dashboard UI Adapter
+│   │   │   ├── test-delayed-jobs.ts       <-- Interactive Delayed Job test script
+│   │   │   ├── test-repeatable-jobs.ts    <-- Interactive Repeatable Job test script
+│   │   │   ├── test-queue-monitoring.ts   <-- Interactive Queue Monitoring test script
+│   │   │   ├── test-scaling-workers.ts    <-- Interactive Worker Cluster test script
+│   │   │   └── test-phase-p-integration.ts<-- Master End-to-End Integration test script
 │   │   ├── middleware/            <-- Auth Guard, Rate Limiting, API Key Validation
 │   │   ├── models/                <-- Mongoose Database Schemas (Log, Project, User, ApiKey)
 │   │   ├── repositories/          <-- Database Access Layer (Data abstraction)
 │   │   ├── services/              <-- Business Logic Layer (Analytics computation, Auth)
 │   │   ├── socket/                <-- Socket.IO setup, authentication, and room broadcasters
-│   │   └── index.ts               <-- Server entry point & graceful shutdown handlers
+│   │   ├── index.ts               <-- Web API Server entry point
+│   │   └── worker.ts              <-- Standalone Worker Process entry point
 │   └── package.json
 │
 └── frontend/                      <-- Next.js 16 App Router Frontend
@@ -190,6 +197,7 @@ MONGODB_URI=mongodb://localhost:27017/loglens
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=your_super_secret_jwt_key_here
 NODE_ENV=development
+WORKER_CONCURRENCY=10
 ```
 
 **Frontend Configuration (`frontend/.env.local`):**
@@ -200,13 +208,21 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 
 ---
 
-### Step 3: Start the Backend Server
+### Step 3: Start the Backend Server & Worker
 
+In your terminal:
 ```bash
 cd backend
 npm install
 npm run dev
 ```
+
+To run a dedicated worker process separately in production:
+```bash
+cd backend
+npm run dev:worker
+```
+
 *Output:*
 ```
 [INFO] Database connected
@@ -239,17 +255,35 @@ LogLens includes comprehensive integration and automated test suites.
 cd backend
 npm test
 ```
-*Runs Jest suites verifying Authentication, Log Ingestion, WebSockets, API Keys, Delayed Jobs, and Repeatable Schedulers.*
+*Runs Jest suites verifying Authentication, Log Ingestion, WebSockets, API Keys, Delayed Jobs, Repeatable Schedulers, Queue Monitoring, and Worker Scaling.*
 
 ### 2. Run Interactive Queue Verification Scripts
 
-**Verify Delayed Jobs (Debouncing & Delay States):**
+**Verify Master Phase P Integration Pipeline:**
+```bash
+cd backend
+npx ts-node src/jobs/test-phase-p-integration.ts
+```
+
+**Verify Scaling Worker Clusters:**
+```bash
+cd backend
+npx ts-node src/jobs/test-scaling-workers.ts
+```
+
+**Verify Queue Monitoring & Bull Board APIs:**
+```bash
+cd backend
+npx ts-node src/jobs/test-queue-monitoring.ts
+```
+
+**Verify Delayed Jobs:**
 ```bash
 cd backend
 npx ts-node src/jobs/test-delayed-jobs.ts
 ```
 
-**Verify Repeatable Jobs (Cron Schedulers & Persistence):**
+**Verify Repeatable Jobs:**
 ```bash
 cd backend
 npx ts-node src/jobs/test-repeatable-jobs.ts
@@ -271,7 +305,7 @@ npx vitest run
 - ✅ **Phase I-K**: Next.js 16 Migration, TanStack Query (Server State), Zustand (UI State).
 - ✅ **Phase L-M**: Real-Time Dashboard UI & Recharts Data Visualization.
 - ✅ **Phase N**: Horizontal Socket.IO Infrastructure & Secure WebSocket Room Broadcasting.
-- ✅ **Phase P (Current)**: Distributed Task Queue Architecture (BullMQ & Redis)
+- ✅ **Phase P (Completed)**: Distributed Task Queue Architecture (BullMQ & Redis)
   - **P1**: Redis Connection Setup & Ping Health Check
   - **P2**: Production Queue Instance (`log-ingestion`)
   - **P3-P4**: Log Producer & Concurrent Worker Processors
@@ -279,13 +313,16 @@ npx vitest run
   - **P7**: Exponential Retry Strategies & `UnrecoverableError` Handling
   - **P8**: Delayed Jobs (Debounced AI Analysis & Alert Cooldowns)
   - **P9**: Repeatable Jobs (`upsertJobScheduler` for Health Check, Analytics, Cleanup)
+  - **P10**: Queue Monitoring & Bull Board UI Integration (`/admin/queues`)
+  - **P11**: Scaling Workers & Horizontal Cluster Concurrency
+  - **P12**: Complete End-to-End System Integration
 
 ---
 
 ## 📜 API & Event Reference for Developers
 
 ### REST Ingestion Endpoint
-`POST /api/v1/logs/ingest`
+`POST /api/v1/projects/:id/logs`
 
 **Headers:**
 ```json
@@ -308,9 +345,23 @@ npx vitest run
 }
 ```
 
-### Socket.IO Client Events
-- `log:new`: Emitted when a worker finishes processing a log job.
-- `analytics:update`: Emitted when analytics metrics re-calculate.
+**Response (HTTP 202 Accepted):**
+```json
+{
+  "success": true,
+  "message": "Log enqueued for asynchronous processing",
+  "data": {
+    "status": "queued",
+    "jobId": "378",
+    "projectId": "60c72b2f9b1d8b2a3c4d5e6f"
+  }
+}
+```
+
+### Queue Monitoring Endpoints
+- `GET /admin/queues`: Bull Board Dashboard UI.
+- `GET /api/v1/queues/metrics`: Returns JSON health metrics for active queues.
+- `GET /api/v1/queues/failed`: Returns failed job summaries and stacktraces.
 
 ---
 
