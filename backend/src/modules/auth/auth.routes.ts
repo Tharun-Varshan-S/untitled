@@ -7,10 +7,13 @@ import { googleLogin, googleCallback, githubLogin, githubCallback } from './oaut
 
 const router = Router();
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 attempts per 15 minutes
+  skip: () => isDev,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

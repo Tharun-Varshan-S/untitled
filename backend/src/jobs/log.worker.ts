@@ -196,7 +196,7 @@ const handleLogCleanupJob = async (job: Job<LogCleanupJobPayloadV1>, workerId?: 
  * Master Worker processor router function for BullMQ jobs.
  */
 export const processLogJob = async (job: Job<any>, workerId?: string) => {
-  logger.info(`[Worker ${workerId || 'Default'}] Processing Job #${job.id} ('${job.name}') (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
+  logger.debug(`[Worker ${workerId || 'Default'}] Processing Job #${job.id} ('${job.name}') (Attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
 
   switch (job.name) {
     case JOB_NAMES.SCHEDULED_AI_ANALYSIS:
@@ -246,11 +246,11 @@ export const createLogWorker = (workerId?: string, options?: Partial<WorkerOptio
   );
 
   worker.on('active', (job) => {
-    logger.info(`⚡ [Event: Active] [${instanceId}] Job #${job.id} ('${job.name}') active on worker instance.`);
+    logger.debug(`⚡ [Event: Active] [${instanceId}] Job #${job.id} ('${job.name}') active on worker instance.`);
   });
 
   worker.on('completed', (job, result) => {
-    logger.info(`✅ [Event: Completed] [${instanceId}] Job #${job.id} ('${job.name}') completed. Result: ${JSON.stringify(result)}`);
+    logger.debug(`✅ [Event: Completed] [${instanceId}] Job #${job.id} ('${job.name}') completed.`);
   });
 
   worker.on('failed', (job, err) => {
@@ -273,17 +273,17 @@ export const logQueueEvents = new QueueEvents(LOG_QUEUE_NAME, {
 });
 
 logQueueEvents.on('waiting', ({ jobId }) => {
-  logger.info(`⌛ [Event: Waiting] Job #${jobId} entered the waiting state in Redis.`);
+  logger.debug(`⌛ [Event: Waiting] Job #${jobId} entered the waiting state in Redis.`);
 });
 
 logQueueEvents.on('delayed', ({ jobId, delay }) => {
-  logger.info(`⏱️ [Event: Delayed] Job #${jobId} is delayed by ${delay}ms.`);
+  logger.debug(`⏱️ [Event: Delayed] Job #${jobId} is delayed by ${delay}ms.`);
 });
 
 logQueueEvents.on('drained', () => {
-  logger.info(`🧹 [Event: Drained] All jobs in queue '${LOG_QUEUE_NAME}' have been processed.`);
+  logger.debug(`🧹 [Event: Drained] All jobs in queue '${LOG_QUEUE_NAME}' have been processed.`);
 });
 
 logQueueEvents.on('removed', ({ jobId }) => {
-  logger.info(`🗑️ [Event: Removed] Job #${jobId} was removed from the queue.`);
+  logger.debug(`🗑️ [Event: Removed] Job #${jobId} was removed from the queue.`);
 });

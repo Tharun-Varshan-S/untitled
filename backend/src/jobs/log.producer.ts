@@ -30,7 +30,7 @@ export const addLogJob = async (
     };
 
     const job = await logQueue.add(JOB_NAMES.PROCESS_SINGLE_LOG, payload, opts);
-    logger.info(`[Producer] Enqueued job #${job.id} into queue '${LOG_QUEUE_NAME}'`);
+    logger.debug(`[Producer] Enqueued job #${job.id} into queue '${LOG_QUEUE_NAME}'`);
     return job;
   } catch (error) {
     logger.error(`[Producer] Failed to enqueue log job: ${error instanceof Error ? error.message : String(error)}`);

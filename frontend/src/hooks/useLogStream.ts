@@ -36,8 +36,8 @@ export const useLogStream = (projectId: string | undefined) => {
         }
 
         // Avoid duplicate log entries
-        const existingIds = new Set(oldData.logs.map((l: any) => l._id || l.id));
-        const logId = newLog.id || (newLog as any)._id;
+        const existingIds = new Set(oldData.logs.filter(Boolean).map((l: any) => l?._id || l?.id));
+        const logId = newLog?.id || (newLog as any)?._id;
         if (logId && existingIds.has(logId)) {
           return oldData;
         }

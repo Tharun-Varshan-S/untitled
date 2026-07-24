@@ -94,6 +94,14 @@ flowchart LR
 - **Real-Time Connection**: Socket.IO Client
 - **Test Framework**: Vitest & React Testing Library
 
+### Official Client Library (`loglens-sdk` / `/sdk`)
+- **Package Name**: `loglens-sdk`
+- **HTTP Transport**: Axios
+- **Architecture**: Modular Facade (`init`, `info`, `warn`, `error`, `debug`, `fatal`)
+- **Execution Model**: Asynchronous & Non-blocking (`setImmediate`)
+- **Fault Tolerance**: Crash-proof silent error handling (never crashes host application)
+- **Sample App**: `example-express-app`
+
 ---
 
 ## Project Directory Structure (Handbook & Map)
@@ -135,6 +143,14 @@ loglens/
 │   │   ├── index.ts               <-- Web API Server entry point
 │   │   └── worker.ts              <-- Standalone Worker Process entry point
 │   └── package.json
+│
+├── sdk/                           <-- LogLens Official Client SDK (npm: loglens-sdk)
+│   ├── index.js                   <-- Facade API (init, info, warn, error, debug, fatal)
+│   ├── README.md                  <-- SDK Developer & Architecture Guide
+│   └── src/                       <-- Config, Axios Client, Logger, Types & Utils
+│
+├── example-express-app/           <-- Example Express App integrating LogLens SDK
+│   └── server.js
 │
 └── frontend/                      <-- Next.js 16 App Router Frontend
     ├── src/
@@ -305,17 +321,34 @@ npx vitest run
 - **Phase I-K**: Next.js 16 Migration, TanStack Query (Server State), Zustand (UI State).
 - **Phase L-M**: Real-Time Dashboard UI & Recharts Data Visualization.
 - **Phase N**: Horizontal Socket.IO Infrastructure & Secure WebSocket Room Broadcasting.
-- **Phase P (Completed)**: Distributed Task Queue Architecture (BullMQ & Redis)
-  - **P1**: Redis Connection Setup & Ping Health Check
-  - **P2**: Production Queue Instance (`log-ingestion`)
-  - **P3-P4**: Log Producer & Concurrent Worker Processors
-  - **P5-P6**: Job Lifecycle Management & Pass-by-Reference Payload DTO Versioning
-  - **P7**: Exponential Retry Strategies & `UnrecoverableError` Handling
-  - **P8**: Delayed Jobs (Debounced AI Analysis & Alert Cooldowns)
-  - **P9**: Repeatable Jobs (`upsertJobScheduler` for Health Check, Analytics, Cleanup)
-  - **P10**: Queue Monitoring & Bull Board UI Integration (`/admin/queues`)
-  - **P11**: Scaling Workers & Horizontal Cluster Concurrency
-  - **P12**: Complete End-to-End System Integration
+- **Phase P.5 (Completed)**: LogLens Client SDK (`loglens-sdk`) & Example Integration
+  - Modular layered architecture (`config.js`, `client.js`, `logger.js`, `types.js`, `utils.js`).
+  - Non-blocking asynchronous dispatch (`setImmediate`) & crash-proof HTTP resilience.
+  - Public facade API (`init`, `info`, `warn`, `error`, `debug`, `fatal`).
+  - Fully verified using the `example-express-app` integration.
+
+---
+
+## LogLens Client SDK Quick Start (`loglens-sdk`)
+
+Install the official client SDK in any third-party Node.js application to stream logs directly to your LogLens platform:
+
+```javascript
+const loglens = require('loglens-sdk'); // Or require('./sdk')
+
+// Initialize once during app startup
+loglens.init({
+  apiKey: process.env.LOGLENS_API_KEY,
+  endpoint: 'http://localhost:5000',
+  service: 'Inventory API Service'
+});
+
+// Send logs asynchronously
+loglens.info('Server Started on port 4000');
+loglens.warn('Memory usage warning', { memoryUsageMb: 850 });
+loglens.error('Database connection timeout', { userId: 15, route: '/checkout' });
+```
+*For complete SDK documentation, architectural design, and payload specs, see [`sdk/README.md`](file:///media/tharun-varshan-s/passport/SRI%20ESHWAR%20COLLEGE%20%20OF%20ENGINEERING/SECE%203RD%20YEAR/5TH%20SEM/PROJECT/loglens/sdk/README.md).*
 
 ---
 

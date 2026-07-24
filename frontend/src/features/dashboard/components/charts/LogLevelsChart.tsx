@@ -49,7 +49,7 @@ export const LogLevelsChart = React.memo(({ data, isLoading }: LogLevelsChartPro
       {isLoading && <LoadingChart />}
       {!isLoading && !hasData && <EmptyChart message="No level data available" />}
       {!isLoading && hasData && (
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250} initialDimension={{ width: 400, height: 250 }}>
           <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <Pie
               data={chartData}

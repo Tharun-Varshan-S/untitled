@@ -80,8 +80,8 @@ export const LogTable: React.FC<LogTableProps> = ({ projectId }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[hsl(var(--border))] font-mono">
-                {logs.map((log: LogResponse) => {
-                  const level = log.level.toLowerCase();
+                {logs.filter(Boolean).map((log: LogResponse, index: number) => {
+                  const level = log?.level?.toLowerCase() || 'info';
                   let rowStyle = 'hover:bg-[hsl(var(--surface-hover))] cursor-pointer transition-colors';
                   let badgeStyle = '';
                   
@@ -100,7 +100,7 @@ export const LogTable: React.FC<LogTableProps> = ({ projectId }) => {
                   }
 
                   return (
-                    <tr key={log._id || log.id} className={rowStyle} onClick={() => setSelectedLog(log as any)}>
+                    <tr key={log?._id || log?.id || index} className={rowStyle} onClick={() => setSelectedLog(log as any)}>
                       <td className="px-6 py-3 whitespace-nowrap text-[hsl(var(--text-secondary))] text-xs">
                         {new Date(log.timestamp).toLocaleString()}
                       </td>

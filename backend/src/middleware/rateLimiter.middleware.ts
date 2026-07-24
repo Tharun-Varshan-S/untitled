@@ -1,8 +1,11 @@
 import rateLimit from 'express-rate-limit';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 export const ingestionRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 120,
+  skip: () => isDev,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -15,6 +18,7 @@ export const ingestionRateLimiter = rateLimit({
 export const analyticsRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
+  skip: () => isDev,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -23,3 +27,5 @@ export const analyticsRateLimiter = rateLimit({
     errorCode: 'RATE_LIMIT_EXCEEDED',
   },
 });
+
+

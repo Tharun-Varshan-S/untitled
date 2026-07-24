@@ -44,7 +44,7 @@ export const LogsOverTimeChart = React.memo(({ data, isLoading }: LogsOverTimeCh
       {isLoading && <LoadingChart />}
       {!isLoading && !hasData && <EmptyChart message="No volume data available" />}
       {!isLoading && hasData && (
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250} initialDimension={{ width: 400, height: 250 }}>
           <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border-subtle))" vertical={false} />
             <XAxis

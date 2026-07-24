@@ -1,0 +1,20 @@
+{
+  "name": "loglens-sdk",
+  "version": "1.0.0",
+  "description": "Official Production-Grade Node.js SDK for LogLens Real-time Log Observability Platform",
+  "main": "index.js",
+  "keywords": [
+    "loglens",
+    "logging",
+    "observability",
+    "sdk",
+    "monitoring",
+    "logs",
+    "logger"
+  ],
+  "author": "LogLens Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.0"
+  }
+}

@@ -5,6 +5,7 @@ import app from './app';
 import { connectDB, disconnectDB } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { initializeSocket, closeSocket } from './socket';
+import { createLogWorker } from './jobs/log.worker';
 
 const startServer = async (): Promise<http.Server> => {
   try {
@@ -15,6 +16,10 @@ const startServer = async (): Promise<http.Server> => {
   }
 
   await connectRedis();
+
+  // Instantiate embedded worker for zero-config queue processing
+  const logWorker = createLogWorker('embedded-worker');
+  logger.info('✅ Embedded BullMQ Log Worker initialized & listening for jobs.');
 
   const server = http.createServer(app);
   await initializeSocket(server);

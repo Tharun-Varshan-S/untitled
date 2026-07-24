@@ -20,21 +20,22 @@ const parseRedisConnection = () => {
 
 /**
  * QueueEvents instance for listening to global state transitions across all processes.
+ * Uses logger.debug for routine job state changes to keep developer terminal clean.
  */
 export const logQueueEvents = new QueueEvents(LOG_QUEUE_NAME, {
   connection: parseRedisConnection(),
 });
 
 logQueueEvents.on('waiting', ({ jobId }) => {
-  logger.info(`⌛ [QueueEvent] Job #${jobId} is in waiting state.`);
+  logger.debug(`⌛ [QueueEvent] Job #${jobId} is in waiting state.`);
 });
 
 logQueueEvents.on('active', ({ jobId, prev }) => {
-  logger.info(`⚡ [QueueEvent] Job #${jobId} moved to active state (prev state: ${prev}).`);
+  logger.debug(`⚡ [QueueEvent] Job #${jobId} moved to active state (prev state: ${prev}).`);
 });
 
-logQueueEvents.on('completed', ({ jobId, returnvalue }) => {
-  logger.info(`✅ [QueueEvent] Job #${jobId} completed. Return value: ${returnvalue}`);
+logQueueEvents.on('completed', ({ jobId }) => {
+  logger.debug(`✅ [QueueEvent] Job #${jobId} completed.`);
 });
 
 logQueueEvents.on('failed', ({ jobId, failedReason }) => {
@@ -42,13 +43,13 @@ logQueueEvents.on('failed', ({ jobId, failedReason }) => {
 });
 
 logQueueEvents.on('progress', ({ jobId, data }) => {
-  logger.info(`📈 [QueueEvent] Job #${jobId} reported progress: ${data}%`);
+  logger.debug(`📈 [QueueEvent] Job #${jobId} reported progress: ${data}%`);
 });
 
 logQueueEvents.on('delayed', ({ jobId, delay }) => {
-  logger.info(`⏱️ [QueueEvent] Job #${jobId} delayed for ${delay}ms.`);
+  logger.debug(`⏱️ [QueueEvent] Job #${jobId} delayed for ${delay}ms.`);
 });
 
 logQueueEvents.on('drained', () => {
-  logger.info(`🧹 [QueueEvent] Queue '${LOG_QUEUE_NAME}' is now drained.`);
+  logger.debug(`🧹 [QueueEvent] Queue '${LOG_QUEUE_NAME}' is now drained.`);
 });

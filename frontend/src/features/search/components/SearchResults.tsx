@@ -115,8 +115,8 @@ export function SearchResults() {
       </div>
       
       <div className="flex flex-col">
-        {allLogs.map((log) => (
-          <LogResultItem key={log._id} log={log} searchQuery={store.query} />
+        {allLogs.filter(Boolean).map((log, index) => (
+          <LogResultItem key={log?._id || log?.id || index} log={log} searchQuery={store.query} />
         ))}
       </div>
 
