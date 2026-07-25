@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/lib/constants';
 import { authService } from '@/services/auth.service';
 import { useHealthCheck } from '@/lib/useHealthCheck';
-import { useThemeStore, useUIStore } from '@/store';
+import { useThemeStore, useUIStore, useWorkspaceStore, useProjectStore } from '@/store';
 
 export default function Navbar() {
   const router = useRouter();
@@ -16,6 +16,9 @@ export default function Navbar() {
 
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+
+  const selectedWorkspaceName = useWorkspaceStore((state) => state.selectedWorkspaceName);
+  const selectedProjectName = useProjectStore((state) => state.selectedProjectName);
 
   const handleLogout = () => {
     authService.logout();
@@ -33,11 +36,14 @@ export default function Navbar() {
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
 
-        {/* Environment Selector */}
+        {/* Active Workspace / Project Context Badge */}
         <div className="hidden md:flex items-center gap-2">
-           <span className="flex items-center justify-center w-5 h-5 rounded bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] text-[10px] font-mono text-[hsl(var(--text-secondary))]">PR</span>
-           <span className="text-sm font-medium text-[hsl(var(--text-primary))]">production</span>
-           <svg className="w-4 h-4 text-[hsl(var(--text-muted))]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] text-xs font-mono text-[hsl(var(--text-primary))] shadow-sm">
+             <span className="w-2 h-2 rounded-full bg-[hsl(var(--accent))]"></span>
+             <span className="text-[hsl(var(--text-muted))]">{selectedWorkspaceName || 'Workspace'}</span>
+             <span className="text-[hsl(var(--text-muted))]">/</span>
+             <span className="font-semibold text-[hsl(var(--accent))]">{selectedProjectName || 'Project'}</span>
+           </span>
         </div>
 
         {/* Search Bar */}

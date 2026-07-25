@@ -4,6 +4,13 @@ export interface ThemeStore {
   toggleTheme: () => void;
 }
 
+export interface WorkspaceStore {
+  selectedWorkspaceId: string | null;
+  selectedWorkspaceName: string | null;
+  setSelectedWorkspace: (id: string, name: string) => void;
+  clearSelectedWorkspace: () => void;
+}
+
 export interface ProjectStore {
   selectedProjectId: string | null;
   selectedProjectName: string | null;

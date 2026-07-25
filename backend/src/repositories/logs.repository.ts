@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import LogModel, { LogDocument, LogLevel } from '../models/Log';
 
 export const createLog = async (payload: {
+  workspaceId?: Types.ObjectId | undefined;
   projectId: Types.ObjectId;
   level: LogLevel;
   message: string;
@@ -13,6 +14,7 @@ export const createLog = async (payload: {
 };
 
 export const insertLogs = async (documents: Array<{
+  workspaceId?: Types.ObjectId | undefined;
   projectId: Types.ObjectId;
   level: LogLevel;
   message: string;

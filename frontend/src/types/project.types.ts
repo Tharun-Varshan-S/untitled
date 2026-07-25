@@ -1,26 +1,18 @@
 /**
  * Project types — aligned to backend ProjectResponse and PaginatedProjects contracts.
- *
- * Backend source of truth:
- *   GET  /projects      → { success: true, data: PaginatedProjects }
- *   GET  /projects/:id  → { success: true, data: ProjectResponse }
- *   POST /projects      → { success: true, data: ProjectResponse }
- *   DELETE /projects/:id → { success: true, message: string }
- *
- * ProjectResponse (backend) = { id, name, description, ownerId, createdAt, updatedAt }
- *   NOTE: uses `id` (string) not `_id`. No apiKey, no status, no stats fields.
- *
- * PaginatedProjects (backend) = { data: ProjectResponse[], totalCount, totalPages, currentPage, pageSize }
  */
 
 export interface Project {
   id: string;
   name: string;
   description: string;
+  workspaceId?: string;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type ProjectResponse = Project;
 
 export interface PaginatedProjects {
   data: Project[];
@@ -33,6 +25,7 @@ export interface PaginatedProjects {
 export interface CreateProjectPayload {
   name: string;
   description?: string;
+  workspaceId?: string;
 }
 
 export interface UpdateProjectPayload {

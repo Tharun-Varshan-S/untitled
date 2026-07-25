@@ -14,6 +14,7 @@ import {
   LogCleanupJobPayloadV1,
 } from './payloads/log-payload.dto';
 import * as logsRepo from '../repositories/logs.repository';
+import ProjectModel from '../models/Project';
 import { broadcastNewLog } from '../socket/broadcast';
 import { broadcastAnalyticsUpdate } from '../socket/analytics';
 
@@ -46,10 +47,13 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
 
   const payload = validation.data;
 
-  // Step 2: Persist to Database
+  // Step 2: Resolve Project and parent Workspace
   await job.updateProgress(50);
   const projectObjectId = new Types.ObjectId(payload.projectId);
+  const projectDoc = await ProjectModel.findById(projectObjectId).select('workspaceId').lean();
+
   const created = await logsRepo.createLog({
+    workspaceId: projectDoc?.workspaceId as Types.ObjectId | undefined,
     projectId: projectObjectId,
     level: payload.level,
     message: payload.message,
@@ -62,6 +66,7 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
   await job.updateProgress(75);
   const formattedLog = {
     id: created._id.toString(),
+    workspaceId: created.workspaceId?.toString(),
     projectId: created.projectId.toString(),
     level: created.level,
     message: created.message,
@@ -154,7 +159,6 @@ const handleAnalyticsAggregationJob = async (job: Job<AnalyticsAggregationJobPay
   logger.info(`📊 [Worker ${workerId || 'Default'}: Analytics] Executing periodic log analytics aggregation...`);
   await job.updateProgress(30);
 
-  // Simulated metrics calculation
   await new Promise((resolve) => setTimeout(resolve, 200));
   await job.updateProgress(100);
 
@@ -177,7 +181,6 @@ const handleLogCleanupJob = async (job: Job<LogCleanupJobPayloadV1>, workerId?: 
   logger.info(`🧹 [Worker ${workerId || 'Default'}: Log Cleanup] Running daily retention purge for logs older than ${retentionDays} days...`);
   
   await job.updateProgress(50);
-  // Simulated purge
   await new Promise((resolve) => setTimeout(resolve, 300));
   await job.updateProgress(100);
 
@@ -222,7 +225,6 @@ export const processLogJob = async (job: Job<any>, workerId?: string) => {
 
 /**
  * Factory function to spawn independent, configurable BullMQ Worker instances.
- * Enables horizontal scaling across multiple Node processes or servers.
  */
 export const createLogWorker = (workerId?: string, options?: Partial<WorkerOptions>): Worker => {
   const concurrency = Number(process.env.WORKER_CONCURRENCY) || 10;
@@ -231,9 +233,9 @@ export const createLogWorker = (workerId?: string, options?: Partial<WorkerOptio
   const defaultOptions: WorkerOptions = {
     connection: parseRedisConnection(),
     concurrency,
-    lockDuration: 30000,       // 30-second lock window per job
-    stalledInterval: 30000,    // Check for stalled jobs every 30s
-    maxStalledCount: 2,        // Re-claim stalled jobs up to 2 times
+    lockDuration: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
   };
 
   const worker = new Worker(
@@ -260,14 +262,8 @@ export const createLogWorker = (workerId?: string, options?: Partial<WorkerOptio
   return worker;
 };
 
-/**
- * Singleton Default Worker Instance (for API server processes)
- */
 export const logWorker = createLogWorker('Default-Worker');
 
-/**
- * QueueEvents instance to observe real-time queue events globally.
- */
 export const logQueueEvents = new QueueEvents(LOG_QUEUE_NAME, {
   connection: parseRedisConnection(),
 });

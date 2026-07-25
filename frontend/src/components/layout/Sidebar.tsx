@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/lib/constants';
-import { useUIStore, useProjectStore } from '@/store';
-import { useProjects } from '@/hooks/useProjects';
+import { useUIStore, useWorkspaceStore, useProjectStore } from '@/store';
+import { useWorkspaces, useWorkspaceProjects } from '@/hooks/useWorkspaces';
+import { CreateWorkspaceModal } from '../modals/CreateWorkspaceModal';
+import { CreateProjectModal } from '../modals/CreateProjectModal';
 
 interface NavItem {
   label: string;
@@ -81,19 +83,30 @@ const navGroups: NavGroup[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
   const closeSidebar = useUIStore((state) => state.closeSidebar);
+
+  const { selectedWorkspaceId, selectedWorkspaceName, setSelectedWorkspace } = useWorkspaceStore();
   const { selectedProjectId, selectedProjectName, setSelectedProject } = useProjectStore();
-  const { data: projects = [], isLoading } = useProjects();
-  
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const { data: workspaces = [], isLoading: isLoadingWs } = useWorkspaces();
+  const { data: projects = [], isLoading: isLoadingProjects } = useWorkspaceProjects(selectedWorkspaceId);
+
+  const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+
+  const [isCreateWsOpen, setIsCreateWsOpen] = useState(false);
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+        setIsWsDropdownOpen(false);
+        setIsProjectDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -113,77 +126,143 @@ export default function Sidebar() {
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-[hsl(var(--surface))] min-h-screen flex flex-col border-r border-[hsl(var(--border))] transition-transform transform ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } md:relative md:translate-x-0 md:flex-shrink-0`}>
-        {/* ── Workspace Selector ── */}
-        <div className="relative h-16 px-4 flex items-center justify-between border-b border-[hsl(var(--border))]" ref={dropdownRef}>
-          <button 
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between w-full p-2 rounded-md hover:bg-[hsl(var(--surface-hover))] transition-colors group"
-          >
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-6 h-6 bg-[hsl(var(--accent))] rounded flex items-center justify-center flex-shrink-0 shadow-sm">
-                <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm2 6h16v2H4v-2zm0 4h16v2H4v-2z"/>
-                </svg>
-              </div>
-              <div className="truncate text-left">
-                <p className="text-[hsl(var(--text-primary))] text-sm font-medium leading-none truncate">{selectedProjectName || 'Select a Project'}</p>
-                <p className="text-[hsl(var(--text-muted))] text-xs mt-0.5 truncate">Production Workspace</p>
-              </div>
-            </div>
-            <svg className={`w-4 h-4 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-          </button>
+        
+        {/* ── Multi-Tenant Workspace & Project Selector ── */}
+        <div className="p-3 border-b border-[hsl(var(--border))] space-y-2 bg-[hsl(var(--surface-primary))]" ref={dropdownRef}>
           
-          {/* Dropdown Menu */}
-          {isDropdownOpen && (
-            <div className="absolute top-16 left-4 right-4 bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] rounded-md shadow-xl py-1 z-50 max-h-64 overflow-y-auto">
-              <div className="px-3 py-2 text-xs font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider">
-                Your Projects
+          {/* 1. Workspace Pill */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setIsWsDropdownOpen(!isWsDropdownOpen);
+                setIsProjectDropdownOpen(false);
+              }}
+              className="w-full p-2 rounded-lg bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] hover:border-[hsl(var(--accent))/0.5] transition-all flex items-center justify-between group shadow-sm"
+            >
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="w-5 h-5 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded flex items-center justify-center text-white text-[10px] font-bold shadow">
+                  W
+                </div>
+                <div className="truncate text-left">
+                  <p className="text-[10px] uppercase font-bold text-[hsl(var(--text-muted))] tracking-wider leading-none">Workspace</p>
+                  <p className="text-xs font-semibold text-[hsl(var(--text-primary))] truncate mt-0.5">{selectedWorkspaceName || 'Select Workspace'}</p>
+                </div>
               </div>
-              {isLoading ? (
-                <div className="px-4 py-3 text-sm text-[hsl(var(--text-muted))]">Loading...</div>
-              ) : projects.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-[hsl(var(--text-muted))]">No projects found.</div>
-              ) : (
-                projects.map((p) => (
+              <svg className={`w-3.5 h-3.5 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-transform ${isWsDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+
+            {/* Workspace Dropdown */}
+            {isWsDropdownOpen && (
+              <div className="absolute top-12 left-0 right-0 bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] rounded-lg shadow-2xl py-1 z-50 max-h-60 overflow-y-auto">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-[hsl(var(--text-muted))] uppercase tracking-wider">
+                  Workspaces
+                </div>
+                {isLoadingWs ? (
+                  <div className="px-3 py-2 text-xs text-[hsl(var(--text-muted))]">Loading...</div>
+                ) : workspaces.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-[hsl(var(--text-muted))]">No workspaces found.</div>
+                ) : (
+                  workspaces.map((w) => (
+                    <button
+                      key={w.id}
+                      onClick={() => {
+                        setSelectedWorkspace(w.id, w.name);
+                        setIsWsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[hsl(var(--surface-hover))] transition-colors ${
+                        w.id === selectedWorkspaceId ? 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] font-medium' : 'text-[hsl(var(--text-primary))]'
+                      }`}
+                    >
+                      <span className="truncate">{w.name}</span>
+                      {w.id === selectedWorkspaceId && (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                      )}
+                    </button>
+                  ))
+                )}
+                <div className="border-t border-[hsl(var(--border))] mt-1 pt-1">
                   <button
-                    key={p.id}
                     onClick={() => {
-                      setSelectedProject(p.id, p.name);
-                      setIsDropdownOpen(false);
+                      setIsWsDropdownOpen(false);
+                      setIsCreateWsOpen(true);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-[hsl(var(--surface-hover))] transition-colors ${
-                      p.id === selectedProjectId ? 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))]' : 'text-[hsl(var(--text-primary))]'
-                    }`}
+                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 text-[hsl(var(--accent))] hover:bg-[hsl(var(--surface-hover))] font-medium transition-colors"
                   >
-                    <span className="truncate">{p.name}</span>
-                    {p.id === selectedProjectId && (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                    )}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                    + Create New Workspace
                   </button>
-                ))
-              )}
-              <div className="border-t border-[hsl(var(--border))] mt-1 pt-1">
-                <Link 
-                  href={ROUTES.PROJECTS}
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-[hsl(var(--text-secondary))] hover:text-[hsl(var(--text-primary))] hover:bg-[hsl(var(--surface-hover))] transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                  Manage Projects
-                </Link>
+                </div>
               </div>
-            </div>
-          )}
-          <button 
-            className="md:hidden p-2 text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))]"
-            onClick={closeSidebar}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+            )}
+          </div>
+
+          {/* 2. Project Selector inside Active Workspace */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setIsProjectDropdownOpen(!isProjectDropdownOpen);
+                setIsWsDropdownOpen(false);
+              }}
+              className="w-full p-2 rounded-lg bg-[hsl(var(--surface))] border border-[hsl(var(--border))] hover:border-[hsl(var(--accent))/0.5] transition-all flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="w-2 h-2 rounded-full bg-[hsl(var(--success))] flex-shrink-0 animate-pulse"></div>
+                <div className="truncate text-left">
+                  <p className="text-[10px] uppercase font-bold text-[hsl(var(--text-muted))] tracking-wider leading-none">Project</p>
+                  <p className="text-xs font-semibold text-[hsl(var(--text-primary))] truncate mt-0.5">{selectedProjectName || 'Select Project'}</p>
+                </div>
+              </div>
+              <svg className={`w-3.5 h-3.5 text-[hsl(var(--text-muted))] group-hover:text-[hsl(var(--text-primary))] transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+
+            {/* Project Dropdown */}
+            {isProjectDropdownOpen && (
+              <div className="absolute top-12 left-0 right-0 bg-[hsl(var(--surface-elevated))] border border-[hsl(var(--border))] rounded-lg shadow-2xl py-1 z-50 max-h-60 overflow-y-auto">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-[hsl(var(--text-muted))] uppercase tracking-wider">
+                  Projects in {selectedWorkspaceName}
+                </div>
+                {isLoadingProjects ? (
+                  <div className="px-3 py-2 text-xs text-[hsl(var(--text-muted))]">Loading projects...</div>
+                ) : projects.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-[hsl(var(--text-muted))]">No projects in this workspace.</div>
+                ) : (
+                  projects.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedProject(p.id, p.name);
+                        setIsProjectDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[hsl(var(--surface-hover))] transition-colors ${
+                        p.id === selectedProjectId ? 'bg-[hsl(var(--accent)/0.1)] text-[hsl(var(--accent))] font-medium' : 'text-[hsl(var(--text-primary))]'
+                      }`}
+                    >
+                      <span className="truncate">{p.name}</span>
+                      {p.id === selectedProjectId && (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                      )}
+                    </button>
+                  ))
+                )}
+                <div className="border-t border-[hsl(var(--border))] mt-1 pt-1">
+                  <button
+                    onClick={() => {
+                      setIsProjectDropdownOpen(false);
+                      setIsCreateProjectOpen(true);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 text-[hsl(var(--accent))] hover:bg-[hsl(var(--surface-hover))] font-medium transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                    + New Project in {selectedWorkspaceName}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8 scrollbar-hide">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-hide">
           {navGroups.map((group) => (
             <div key={group.title}>
               <p className="px-3 text-xs font-semibold text-[hsl(var(--text-muted))] uppercase tracking-wider mb-2">
@@ -277,6 +356,20 @@ export default function Sidebar() {
             </div>
         </div>
       </aside>
+
+      {/* Workspace & Project Creation Modals */}
+      <CreateWorkspaceModal
+        isOpen={isCreateWsOpen}
+        onClose={() => setIsCreateWsOpen(false)}
+      />
+      {selectedWorkspaceId && (
+        <CreateProjectModal
+          workspaceId={selectedWorkspaceId}
+          workspaceName={selectedWorkspaceName || 'Workspace'}
+          isOpen={isCreateProjectOpen}
+          onClose={() => setIsCreateProjectOpen(false)}
+        />
+      )}
     </>
   );
 }

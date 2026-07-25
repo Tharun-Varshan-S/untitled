@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { AppError } from '../utils/AppError';
-import ProjectModel, { ProjectDocument } from '../models/Project';
+import ProjectModel from '../models/Project';
+import WorkspaceModel from '../models/Workspace';
+import { createApiKey } from './apiKey.service';
 import {
   CreateProjectDto,
   PaginatedProjects,
@@ -13,6 +15,7 @@ type ProjectRecord = {
   _id: Types.ObjectId;
   name: string;
   description?: string;
+  workspaceId?: Types.ObjectId;
   ownerId: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -22,18 +25,18 @@ const mapProject = (project: ProjectRecord): ProjectResponse => ({
   id: project._id.toString(),
   name: project.name,
   description: project.description ?? '',
+  workspaceId: project.workspaceId?.toString(),
   ownerId: project.ownerId.toString(),
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
 });
 
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const ensureValidObjectId = (value: string): Types.ObjectId => {
   if (!Types.ObjectId.isValid(value)) {
-    throw new AppError('Invalid project id', 400, 'INVALID_PROJECT_ID');
+    throw new AppError('Invalid ID format', 400, 'INVALID_ID');
   }
-
   return new Types.ObjectId(value);
 };
 
@@ -42,12 +45,42 @@ export const createProject = async (
   payload: CreateProjectDto
 ): Promise<ProjectResponse> => {
   const ownerObjectId = ensureValidObjectId(ownerId);
+  let wsObjectId: Types.ObjectId;
 
+  if (payload.workspaceId) {
+    wsObjectId = ensureValidObjectId(payload.workspaceId);
+    const ws = await WorkspaceModel.findOne({ _id: wsObjectId, ownerId: ownerObjectId });
+    if (!ws) {
+      throw new AppError('Workspace not found or unauthorized', 404, 'WORKSPACE_NOT_FOUND');
+    }
+  } else {
+    // Find or create default workspace for user
+    let defaultWs = await WorkspaceModel.findOne({ ownerId: ownerObjectId }).sort({ createdAt: 1 });
+    if (!defaultWs) {
+      const slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'main';
+      defaultWs = await WorkspaceModel.create({
+        name: 'Main Workspace',
+        slug: 'main-workspace',
+        ownerId: ownerObjectId,
+      });
+    }
+    wsObjectId = defaultWs._id as Types.ObjectId;
+  }
+
+  // Create Project
   const project = await ProjectModel.create({
-    ownerId: ownerObjectId,
-    name: payload.name,
+    name: payload.name.trim(),
     description: payload.description ?? '',
+    workspaceId: wsObjectId,
+    ownerId: ownerObjectId,
   });
+
+  // Auto-generate default API Key for project
+  try {
+    await createApiKey(ownerId, project._id.toString(), `${payload.name.trim()} Key`);
+  } catch (err) {
+    // Ignore API key creation error if one already exists
+  }
 
   return mapProject(project.toObject());
 };
@@ -57,11 +90,15 @@ export const getProjects = async (
   query: ProjectListQuery
 ): Promise<PaginatedProjects> => {
   const ownerObjectId = ensureValidObjectId(ownerId);
-  const { page, limit, search } = query;
+  const { page, limit, search, workspaceId } = query;
 
   const filter: Record<string, unknown> = {
     ownerId: ownerObjectId,
   };
+
+  if (workspaceId && Types.ObjectId.isValid(workspaceId)) {
+    filter.workspaceId = new Types.ObjectId(workspaceId);
+  }
 
   if (search) {
     filter.name = { $regex: escapeRegExp(search), $options: 'i' };
@@ -160,12 +197,11 @@ export const deleteProject = async (
   if (!deleted) {
     throw new AppError('Project not found', 404, 'PROJECT_NOT_FOUND');
   }
-  // cascade delete related API keys
+
   try {
-    // lazy-load to avoid circular imports at module load time
     const ApiKeyModel = (await import('../models/ApiKey.js')).default as any;
     await ApiKeyModel.deleteMany({ projectId: projectObjectId }).exec();
   } catch (err) {
-    // log and continue; project deletion should not fail due to cleanup issues
+    // Ignore cleanup error
   }
 };
