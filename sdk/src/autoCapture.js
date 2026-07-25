@@ -19,7 +19,12 @@ let isCapturing = false;
  */
 function isInternalLog(args) {
   const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-  return msg.includes('[LogLens') || msg.includes('LogLens SDK');
+  return (
+    msg.includes('[LogLens') ||
+    msg.includes('LogLens SDK') ||
+    msg.includes('Log sent successfully') ||
+    msg.includes('/api/v1/logs/ingest')
+  );
 }
 
 /**

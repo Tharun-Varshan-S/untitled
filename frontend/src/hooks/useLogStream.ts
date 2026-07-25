@@ -27,28 +27,29 @@ export const useLogStream = (projectId: string | undefined) => {
 
       // Prepend new log dynamically into cache
       queryClient.setQueryData(['logs', projectId], (oldData: any) => {
-        if (!oldData || !oldData.logs) {
+        if (!oldData) {
           return {
+            results: [newLog],
             logs: [newLog],
             nextCursor: null,
-            totalStats: { totalMatches: 1 }
+            hasMore: false
           };
         }
 
-        // Avoid duplicate log entries
-        const existingIds = new Set(oldData.logs.filter(Boolean).map((l: any) => l?._id || l?.id));
+        const currentList = oldData.results || oldData.logs || [];
+        const existingIds = new Set(currentList.filter(Boolean).map((l: any) => l?._id || l?.id));
         const logId = newLog?.id || (newLog as any)?._id;
+
         if (logId && existingIds.has(logId)) {
           return oldData;
         }
 
+        const updatedList = [newLog, ...currentList];
+
         return {
           ...oldData,
-          logs: [newLog, ...oldData.logs],
-          totalStats: {
-            ...oldData.totalStats,
-            totalMatches: (oldData.totalStats?.totalMatches || 0) + 1
-          }
+          results: updatedList,
+          logs: updatedList,
         };
       });
 

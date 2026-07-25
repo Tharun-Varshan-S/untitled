@@ -33,7 +33,10 @@ export const validateSearchQuery = (query: unknown): SearchQuery => {
     throw new AppError(`Search query is too long (max ${SearchConfig.validation.maxQueryLength} characters)`, 400, 'INVALID_QUERY_LENGTH');
   }
 
-  const level = typeof data.level === 'string' && data.level.trim() ? data.level.trim() : undefined;
+  // Normalize level to lowercase (e.g. 'Error' -> 'error') for case-insensitive matching
+  const rawLevel = typeof data.level === 'string' && data.level.trim() ? data.level.trim().toLowerCase() : undefined;
+  const level = rawLevel === 'all' || rawLevel === '' ? undefined : rawLevel;
+
   if (level && !(SearchConfig.validation.allowedLevels as readonly string[]).includes(level)) {
     throw new AppError(`Invalid level. Allowed values: ${SearchConfig.validation.allowedLevels.join(', ')}`, 400, 'INVALID_LEVEL');
   }

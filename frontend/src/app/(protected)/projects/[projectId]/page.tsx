@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -11,6 +11,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useAnalyticsOverview } from '@/hooks/useAnalytics';
 import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
 import { LogTable } from '@/features/dashboard/components/LogTable';
+import { useProjectStore } from '@/store';
 
 /**
  * Project detail page — Client Component.
@@ -25,8 +26,16 @@ export default function ProjectDetailPage({
 
   const { data: project, isLoading: isLoadingProject, error: projectError } = useProject(projectId);
   const { data: overview, isLoading: isLoadingOverview } = useAnalyticsOverview(projectId);
+  const setSelectedProject = useProjectStore((state) => state.setSelectedProject);
 
   useAnalyticsStream(projectId || undefined);
+
+  // Synchronize global project store state when navigating to a project detail page
+  useEffect(() => {
+    if (project?.id && project?.name) {
+      setSelectedProject(project.id, project.name);
+    }
+  }, [project, setSelectedProject]);
 
   const fetchError = projectError instanceof Error ? projectError.message : null;
   const isLoading = isLoadingProject || isLoadingOverview;

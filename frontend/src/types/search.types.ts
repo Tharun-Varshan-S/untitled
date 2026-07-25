@@ -12,8 +12,10 @@ export interface LogResponse {
 }
 
 export interface SearchResponse {
-  logs: LogResponse[];
+  results?: LogResponse[];
+  logs?: LogResponse[];
   nextCursor: string | null;
+  hasMore?: boolean;
   totalStats?: {
     totalMatches?: number;
     hasMore?: boolean;

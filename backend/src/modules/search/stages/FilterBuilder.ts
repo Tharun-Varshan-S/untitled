@@ -5,7 +5,7 @@ export class FilterBuilder {
   build(projectId: string, query: SearchQuery): { filters: SearchFilters; isTextSearch: boolean } {
     const filters: SearchFilters = { projectId: new Types.ObjectId(projectId) };
 
-    if (query.level) filters.level = query.level;
+    if (query.level) filters.level = query.level.toLowerCase();
     if (query.service) filters.service = query.service;
     if (query.environment) filters['metadata.environment'] = query.environment;
     if (query.source) filters['metadata.source'] = query.source;
