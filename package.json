@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "update-diagrams": "node docs/architecture/update-diagrams.js",
+    "view-diagrams": "node docs/architecture/server.js"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3"

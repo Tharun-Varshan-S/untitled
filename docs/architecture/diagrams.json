@@ -1,0 +1,26 @@
+{
+  "updatedAt": "2026-07-26T05:37:50.538Z",
+  "version": "1.0.0",
+  "diagrams": [
+    {
+      "name": "Conceptual Architecture",
+      "file": "conceptual-architecture.svg"
+    },
+    {
+      "name": "Component Architecture",
+      "file": "component-architecture.svg"
+    },
+    {
+      "name": "Deployment Architecture",
+      "file": "deployment-architecture.svg"
+    },
+    {
+      "name": "Sequence Diagram",
+      "file": "sequence-diagram.svg"
+    },
+    {
+      "name": "Data Flow Diagram",
+      "file": "data-flow-diagram.svg"
+    }
+  ]
+}

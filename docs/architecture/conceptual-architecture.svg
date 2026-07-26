@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" style="background-color: #0b0f19; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <linearGradient id="primaryGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="queueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+    </marker>
+  </defs>
+
+  <!-- Title Banner -->
+  <rect x="0" y="0" width="1200" height="70" fill="#0f172a" />
+  <line x1="0" y1="70" x2="1200" y2="70" stroke="#6366f1" stroke-width="2" />
+  <text x="30" y="38" fill="#f8fafc" font-size="22" font-weight="700" letter-spacing="0.5">LogLens – Conceptual Architecture Diagram</text>
+  <text x="30" y="58" fill="#94a3b8" font-size="13">High-level overview of system boundaries, ingest pipelines, processing modules, and external actors</text>
+  <rect x="1040" y="20" width="130" height="30" rx="6" fill="#1e1b4b" stroke="#6366f1" stroke-width="1"/>
+  <text x="1105" y="40" fill="#a5b4fc" font-size="12" font-weight="600" text-anchor="middle">LOGLENS ARCH</text>
+<rect x="40" y="100" width="220" height="660" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1.5" stroke-dasharray="6,6" /><text x="55" y="125" fill="#94a3b8" font-size="13" font-weight="700" letter-spacing="1">EXTERNAL ENTITIES</text>
+    <g filter="url(#dropShadow)">
+      <rect x="60" y="150" width="180" height="90" rx="10" fill="#111827" stroke="#38bdf8" stroke-width="1.5" />
+      <rect x="60" y="150" width="180" height="34" rx="10" fill="#1e293b" />
+      <rect x="60" y="180" width="180" height="4" fill="#38bdf8" />
+      <text x="75" y="172" fill="#f8fafc" font-size="14" font-weight="600">Log Producers</text>
+      <text x="75" y="200" fill="#94a3b8" font-size="12">Express/Node Apps (SDK)</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="60" y="330" width="180" height="90" rx="10" fill="#111827" stroke="#38bdf8" stroke-width="1.5" />
+      <rect x="60" y="330" width="180" height="34" rx="10" fill="#1e293b" />
+      <rect x="60" y="360" width="180" height="4" fill="#38bdf8" />
+      <text x="75" y="352" fill="#f8fafc" font-size="14" font-weight="600">Dashboard Users</text>
+      <text x="75" y="380" fill="#94a3b8" font-size="12">Web Browsers / Admins</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="60" y="510" width="180" height="90" rx="10" fill="#111827" stroke="#f43f5e" stroke-width="1.5" />
+      <rect x="60" y="510" width="180" height="34" rx="10" fill="#1e293b" />
+      <rect x="60" y="540" width="180" height="4" fill="#f43f5e" />
+      <text x="75" y="532" fill="#f8fafc" font-size="14" font-weight="600">Alert Webhooks</text>
+      <text x="75" y="560" fill="#94a3b8" font-size="12">Slack / Email / SMS</text>
+    </g>
+  <rect x="300" y="100" width="240" height="660" rx="12" fill="#0f172a" stroke="#6366f1" stroke-width="1.5" /><text x="315" y="125" fill="#a5b4fc" font-size="13" font-weight="700" letter-spacing="1">INGESTION & API GATEWAY</text>
+    <g filter="url(#dropShadow)">
+      <rect x="320" y="150" width="200" height="80" rx="10" fill="#111827" stroke="#6366f1" stroke-width="1.5" />
+      <rect x="320" y="150" width="200" height="34" rx="10" fill="#1e293b" />
+      <rect x="320" y="180" width="200" height="4" fill="#6366f1" />
+      <text x="335" y="172" fill="#f8fafc" font-size="14" font-weight="600">Express API Server</text>
+      <text x="335" y="200" fill="#94a3b8" font-size="12">Node.js + TypeScript</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="320" y="260" width="200" height="80" rx="10" fill="#111827" stroke="#6366f1" stroke-width="1.5" />
+      <rect x="320" y="260" width="200" height="34" rx="10" fill="#1e293b" />
+      <rect x="320" y="290" width="200" height="4" fill="#6366f1" />
+      <text x="335" y="282" fill="#f8fafc" font-size="14" font-weight="600">Auth & Rate Limiter</text>
+      <text x="335" y="310" fill="#94a3b8" font-size="12">JWT & API Key Verification</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="320" y="370" width="200" height="80" rx="10" fill="#111827" stroke="#6366f1" stroke-width="1.5" />
+      <rect x="320" y="370" width="200" height="34" rx="10" fill="#1e293b" />
+      <rect x="320" y="400" width="200" height="4" fill="#6366f1" />
+      <text x="335" y="392" fill="#f8fafc" font-size="14" font-weight="600">Queue Enqueuer</text>
+      <text x="335" y="420" fill="#94a3b8" font-size="12">< 5ms Fast HTTP 202 Ingest</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="320" y="480" width="200" height="80" rx="10" fill="#111827" stroke="#6366f1" stroke-width="1.5" />
+      <rect x="320" y="480" width="200" height="34" rx="10" fill="#1e293b" />
+      <rect x="320" y="510" width="200" height="4" fill="#6366f1" />
+      <text x="335" y="502" fill="#f8fafc" font-size="14" font-weight="600">Rest API Controllers</text>
+      <text x="335" y="530" fill="#94a3b8" font-size="12">Logs, Projects, Auth, Search</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="320" y="590" width="200" height="80" rx="10" fill="#111827" stroke="#f59e0b" stroke-width="1.5" />
+      <rect x="320" y="590" width="200" height="34" rx="10" fill="#1e293b" />
+      <rect x="320" y="620" width="200" height="4" fill="#f59e0b" />
+      <text x="335" y="612" fill="#f8fafc" font-size="14" font-weight="600">Bull Board UI</text>
+      <text x="335" y="640" fill="#94a3b8" font-size="12">Admin Queue Monitoring</text>
+    </g>
+  <rect x="580" y="100" width="280" height="660" rx="12" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5" /><text x="595" y="125" fill="#fde047" font-size="13" font-weight="700" letter-spacing="1">ASYNC QUEUE & WORKERS</text>
+    <g filter="url(#dropShadow)">
+      <rect x="600" y="150" width="240" height="90" rx="10" fill="#111827" stroke="#f59e0b" stroke-width="1.5" />
+      <rect x="600" y="150" width="240" height="34" rx="10" fill="#1e293b" />
+      <rect x="600" y="180" width="240" height="4" fill="#f59e0b" />
+      <text x="615" y="172" fill="#f8fafc" font-size="14" font-weight="600">BullMQ Queue System</text>
+      <text x="615" y="200" fill="#94a3b8" font-size="12">Log-Ingestion & Scheduling</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="600" y="270" width="240" height="100" rx="10" fill="#111827" stroke="#10b981" stroke-width="1.5" />
+      <rect x="600" y="270" width="240" height="34" rx="10" fill="#1e293b" />
+      <rect x="600" y="300" width="240" height="4" fill="#10b981" />
+      <text x="615" y="292" fill="#f8fafc" font-size="14" font-weight="600">BullMQ Worker Pool</text>
+      <text x="615" y="320" fill="#94a3b8" font-size="12">Clustered Background Process</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="600" y="390" width="240" height="80" rx="10" fill="#111827" stroke="#8b5cf6" stroke-width="1.5" />
+      <rect x="600" y="390" width="240" height="34" rx="10" fill="#1e293b" />
+      <rect x="600" y="420" width="240" height="4" fill="#8b5cf6" />
+      <text x="615" y="412" fill="#f8fafc" font-size="14" font-weight="600">AI Root Cause Engine</text>
+      <text x="615" y="440" fill="#94a3b8" font-size="12">Debounced Anomaly Analyzer</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="600" y="490" width="240" height="80" rx="10" fill="#111827" stroke="#10b981" stroke-width="1.5" />
+      <rect x="600" y="490" width="240" height="34" rx="10" fill="#1e293b" />
+      <rect x="600" y="520" width="240" height="4" fill="#10b981" />
+      <text x="615" y="512" fill="#f8fafc" font-size="14" font-weight="600">Analytics Aggregator</text>
+      <text x="615" y="540" fill="#94a3b8" font-size="12">Pre-computed Metrics Engine</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="600" y="590" width="240" height="80" rx="10" fill="#111827" stroke="#f43f5e" stroke-width="1.5" />
+      <rect x="600" y="590" width="240" height="34" rx="10" fill="#1e293b" />
+      <rect x="600" y="620" width="240" height="4" fill="#f43f5e" />
+      <text x="615" y="612" fill="#f8fafc" font-size="14" font-weight="600">Notification Dispatcher</text>
+      <text x="615" y="640" fill="#94a3b8" font-size="12">Alerting Subsystem</text>
+    </g>
+  <rect x="900" y="100" width="260" height="660" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.5" /><text x="915" y="125" fill="#6ee7b7" font-size="13" font-weight="700" letter-spacing="1">DATA & REALTIME LAYER</text>
+    <g filter="url(#dropShadow)">
+      <rect x="920" y="150" width="220" height="100" rx="10" fill="#111827" stroke="#ef4444" stroke-width="1.5" />
+      <rect x="920" y="150" width="220" height="34" rx="10" fill="#1e293b" />
+      <rect x="920" y="180" width="220" height="4" fill="#ef4444" />
+      <text x="935" y="172" fill="#f8fafc" font-size="14" font-weight="600">Redis 7+ Store</text>
+      <text x="935" y="200" fill="#94a3b8" font-size="12">BullMQ State & Pub/Sub</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="920" y="280" width="220" height="110" rx="10" fill="#111827" stroke="#10b981" stroke-width="1.5" />
+      <rect x="920" y="280" width="220" height="34" rx="10" fill="#1e293b" />
+      <rect x="920" y="310" width="220" height="4" fill="#10b981" />
+      <text x="935" y="302" fill="#f8fafc" font-size="14" font-weight="600">MongoDB Database</text>
+      <text x="935" y="330" fill="#94a3b8" font-size="12">Logs, Workspaces, Projects</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="920" y="420" width="220" height="100" rx="10" fill="#111827" stroke="#06b6d4" stroke-width="1.5" />
+      <rect x="920" y="420" width="220" height="34" rx="10" fill="#1e293b" />
+      <rect x="920" y="450" width="220" height="4" fill="#06b6d4" />
+      <text x="935" y="442" fill="#f8fafc" font-size="14" font-weight="600">Socket.IO Server</text>
+      <text x="935" y="470" fill="#94a3b8" font-size="12">WebSockets & Room Broadcaster</text>
+    </g>
+  
+    <g filter="url(#dropShadow)">
+      <rect x="920" y="550" width="220" height="90" rx="10" fill="#111827" stroke="#38bdf8" stroke-width="1.5" />
+      <rect x="920" y="550" width="220" height="34" rx="10" fill="#1e293b" />
+      <rect x="920" y="580" width="220" height="4" fill="#38bdf8" />
+      <text x="935" y="572" fill="#f8fafc" font-size="14" font-weight="600">Live Dashboard UI</text>
+      <text x="935" y="600" fill="#94a3b8" font-size="12">Next.js 16 + TanStack Query</text>
+    </g>
+  
+    <g>
+      <path d="M 240 195 L 320 195" fill="none" stroke="#38bdf8" stroke-width="2"  marker-end="url(#arrow)" />
+      
+        <rect x="216" y="184" width="128" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="280" y="198" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">POST /logs (SDK)</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 240 375 C 280 375, 280 520, 320 520" fill="none" stroke="#06b6d4" stroke-width="2"  marker-end="url(#arrow)" />
+      
+        <rect x="198.5" y="436.5" width="163" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="280" y="450.5" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">REST API & WebSockets</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 520 395 C 560 395, 560 195, 600 195" fill="none" stroke="#f59e0b" stroke-width="2"  marker-end="url(#arrow-amber)" />
+      
+        <rect x="513.5" y="284" width="93" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="560" y="298" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">Enqueue Job</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 720 240 L 720 270" fill="none" stroke="#10b981" stroke-width="2"  marker-end="url(#arrow-emerald)" />
+      
+        <rect x="687.5" y="244" width="65" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="720" y="258" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">Dequeue</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 840 320 C 880 320, 880 335, 920 335" fill="none" stroke="#10b981" stroke-width="2"  marker-end="url(#arrow-emerald)" />
+      
+        <rect x="833.5" y="316.5" width="93" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="880" y="330.5" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">Persist Log</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 600 215 C 760 215, 760 200, 920 200" fill="none" stroke="#f59e0b" stroke-width="2"  marker-end="url(#arrow-amber)" />
+      
+        <rect x="713.5" y="196.5" width="93" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="760" y="210.5" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">Queue State</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 840 340 C 880 340, 880 460, 920 460" fill="none" stroke="#06b6d4" stroke-width="2"  marker-end="url(#arrow-emerald)" />
+      
+        <rect x="819.5" y="389" width="121" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="880" y="403" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">Broadcast Event</text>
+      
+    </g>
+  
+    <g>
+      <path d="M 920 470 C 580 470, 580 390, 240 390" fill="none" stroke="#06b6d4" stroke-width="2"  marker-end="url(#arrow)" />
+      
+        <rect x="519.5" y="419" width="121" height="20" rx="4" fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+        <text x="580" y="433" fill="#94a3b8" font-size="11" font-weight="500" text-anchor="middle">Realtime Stream</text>
+      
+    </g>
+  </svg>
