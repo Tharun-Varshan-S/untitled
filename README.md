@@ -262,6 +262,24 @@ npm run dev
 
 ---
 
+### Step 5: Test Real-time Ingestion with the Demo App
+
+To simulate logs being sent from an external application:
+
+1. Create a project in the LogLens Dashboard (http://localhost:3000).
+2. Generate an API Key for that project.
+3. Open `demo-external-app.js` in the root folder and paste your key:
+   ```javascript
+   const API_KEY = 'YOUR_API_KEY_HERE';
+   ```
+4. Run the demo script in a new terminal:
+   ```bash
+   node demo-external-app.js
+   ```
+5. Watch the logs stream live into your LogLens Dashboard!
+
+---
+
 ## Testing & Verification Suite
 
 LogLens includes comprehensive integration and automated test suites.
