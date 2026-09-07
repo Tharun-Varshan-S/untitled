@@ -14,6 +14,7 @@ export const JOB_NAMES = {
   COLLECTOR_HEALTH_CHECK: 'collector-health-check',
   ANALYTICS_AGGREGATION: 'analytics-aggregation',
   LOG_CLEANUP: 'log-cleanup',
+  ANALYZE_LOG: 'analyze-log',
 } as const;
 
 /**
@@ -101,6 +102,23 @@ export const addDelayedAiAnalysisJob = async (
   };
 
   return addDelayedJob(JOB_NAMES.SCHEDULED_AI_ANALYSIS, payload, delayMs, opts);
+};
+
+/**
+ * Enqueue a job to perform AI root-cause analysis on a specific log entry.
+ */
+export const addAnalyzeLogJob = async (
+  logId: string,
+  projectId: string,
+  opts?: JobsOptions
+) => {
+  const payload = {
+    version: 1 as const,
+    logId,
+    projectId,
+  };
+  
+  return addDelayedJob(JOB_NAMES.ANALYZE_LOG, payload, 0, opts);
 };
 
 /**

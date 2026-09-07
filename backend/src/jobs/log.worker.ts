@@ -15,8 +15,17 @@ import {
 } from './payloads/log-payload.dto';
 import * as logsRepo from '../repositories/logs.repository';
 import ProjectModel from '../models/Project';
+import LogModel from '../models/Log';
 import { broadcastNewLog } from '../socket/broadcast';
 import { broadcastAnalyticsUpdate } from '../socket/analytics';
+import { generateLogHash } from '../utils/logHash';
+import { isAnalysisWorthy } from '../utils/logFilter';
+import { addAnalyzeLogJob } from './log.producer';
+import { aiService } from '../services/aiService';
+import { buildLogAnalysisPrompt } from '../prompts/logAnalysisPrompt';
+import { validateAiResponse } from '../validators/aiResponseValidator';
+import { analysisStorageService } from '../services/analysisStorageService';
+import { groqConfig } from '../config/groq';
 
 const parseRedisConnection = () => {
   try {
@@ -52,6 +61,20 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
   const projectObjectId = new Types.ObjectId(payload.projectId);
   const projectDoc = await ProjectModel.findById(projectObjectId).select('workspaceId').lean();
 
+  // Compute deduplication hash before saving
+  const stack = job.data.metadata && typeof job.data.metadata === 'object' ? (job.data.metadata as any).stack : undefined;
+  const logHash = generateLogHash(payload.level, payload.message, stack);
+
+  // Check if this exact error already exists to potentially copy its analysis
+  let existingAnalysis: any = undefined;
+  if (isAnalysisWorthy(payload.level, payload.message)) {
+    const existingLog = await LogModel.findOne({ logHash, 'aiAnalysis.summary': { $exists: true } }).lean();
+    if (existingLog && existingLog.aiAnalysis) {
+      existingAnalysis = existingLog.aiAnalysis;
+      logger.debug(`[Worker ${workerId || 'Default'}] Cache hit for log hash ${logHash}. Copying prior AI analysis.`);
+    }
+  }
+
   const created = await logsRepo.createLog({
     workspaceId: projectDoc?.workspaceId as Types.ObjectId | undefined,
     projectId: projectObjectId,
@@ -61,6 +84,18 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
     metadata: job.data.metadata ?? undefined,
     timestamp: job.data.timestamp ? new Date(job.data.timestamp) : new Date(),
   });
+
+  // Assign hash and potentially existing analysis
+  created.logHash = logHash;
+  if (existingAnalysis) {
+    created.aiAnalysis = existingAnalysis;
+  }
+  await created.save();
+
+  // If the log is analysis-worthy and we didn't just copy a cached analysis, enqueue it for AI analysis
+  if (isAnalysisWorthy(payload.level, payload.message) && !existingAnalysis) {
+    await addAnalyzeLogJob(created._id.toString(), payload.projectId);
+  }
 
   // Step 3: Broadcast Real-time Updates
   await job.updateProgress(75);
@@ -89,6 +124,68 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
     jobId: job.id,
     logId: formattedLog.id,
     projectId: job.data.projectId,
+  };
+};
+
+/**
+ * Handle Dedicated AI Root-Cause Analysis for a specific log (Prompts 3, 4, 5, 10)
+ */
+const handleAnalyzeLogJob = async (job: Job<any>, workerId?: string) => {
+  const { logId, projectId } = job.data;
+  
+  logger.info(`🤖 [Worker ${workerId || 'Default'}] Starting AI Analysis for log ${logId}`);
+  await job.updateProgress(10);
+
+  // 1. Fetch Log
+  const logDoc = await LogModel.findById(logId);
+  if (!logDoc) {
+    throw new UnrecoverableError(`Log ${logId} not found for analysis.`);
+  }
+
+  await job.updateProgress(30);
+
+  // 2. Build Prompt
+  const messages = buildLogAnalysisPrompt(logDoc);
+
+  await job.updateProgress(50);
+
+  // 3. Call AI Service (Rate limited by BullMQ concurrency / maxRetries)
+  let rawResponse: string;
+  try {
+    rawResponse = await aiService.generateCompletion(messages, { type: 'json_object' });
+  } catch (error: any) {
+    logger.error(`[Worker ${workerId || 'Default'}] AI call failed for log ${logId}: ${error.message}`);
+    // Throw error to let BullMQ retry it with backoff
+    throw error;
+  }
+
+  await job.updateProgress(75);
+
+  // 4. Validate output
+  let validatedOutput;
+  try {
+    validatedOutput = validateAiResponse(rawResponse);
+  } catch (error: any) {
+    logger.error(`[Worker ${workerId || 'Default'}] AI output validation failed for log ${logId}: ${error.message}`);
+    throw error;
+  }
+
+  await job.updateProgress(90);
+
+  // 5. Store Analysis
+  await analysisStorageService.saveAnalysis(logId, validatedOutput, groqConfig.model);
+
+  await job.updateProgress(100);
+  
+  // Broadcast update so the dashboard refreshes with the new analysis
+  broadcastAnalyticsUpdate(projectId);
+
+  return {
+    success: true,
+    processedBy: workerId || `PID-${process.pid}`,
+    logId,
+    projectId,
+    analyzedAt: new Date().toISOString(),
   };
 };
 
@@ -216,6 +313,9 @@ export const processLogJob = async (job: Job<any>, workerId?: string) => {
 
     case JOB_NAMES.LOG_CLEANUP:
       return handleLogCleanupJob(job, workerId);
+
+    case JOB_NAMES.ANALYZE_LOG:
+      return handleAnalyzeLogJob(job, workerId);
 
     case JOB_NAMES.PROCESS_SINGLE_LOG:
     default:

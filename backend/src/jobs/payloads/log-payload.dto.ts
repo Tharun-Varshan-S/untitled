@@ -17,6 +17,15 @@ export interface LogJobPayloadV1 {
 }
 
 /**
+ * Payload schema for a dedicated AI Analysis job on a specific log entry.
+ */
+export interface AnalyzeLogJobPayloadV1 {
+  version: 1;
+  logId: string;
+  projectId: string;
+}
+
+/**
  * Payload schema for delayed AI Log Aggregation & Root Cause Analysis jobs.
  */
 export interface AiAnalysisJobPayloadV1 {
@@ -79,7 +88,8 @@ export type JobPayloadType =
   | NotificationJobPayloadV1
   | HealthCheckJobPayloadV1
   | AnalyticsAggregationJobPayloadV1
-  | LogCleanupJobPayloadV1;
+  | LogCleanupJobPayloadV1
+  | AnalyzeLogJobPayloadV1;
 
 /**
  * Payload validation result
@@ -155,4 +165,21 @@ export const validateNotificationPayload = (payload: unknown): PayloadValidation
     return { isValid: false, errors: ['projectId and alertId required'] };
   }
   return { isValid: true, data: p as unknown as NotificationJobPayloadV1 };
+};
+
+/**
+ * Validates Analyze Log payload
+ */
+export const validateAnalyzeLogPayload = (payload: unknown): PayloadValidationResult<AnalyzeLogJobPayloadV1> => {
+  if (!payload || typeof payload !== 'object') {
+    return { isValid: false, errors: ['Payload must be an object'] };
+  }
+  const p = payload as Record<string, unknown>;
+  if (!p.logId || typeof p.logId !== 'string') {
+    return { isValid: false, errors: ['logId string required'] };
+  }
+  if (!p.projectId || typeof p.projectId !== 'string') {
+    return { isValid: false, errors: ['projectId string required'] };
+  }
+  return { isValid: true, data: p as unknown as AnalyzeLogJobPayloadV1 };
 };

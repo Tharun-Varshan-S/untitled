@@ -59,7 +59,7 @@ export async function fetchApi<T>(
   } catch (error: unknown) {
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       throw new Error(
-        'Cannot reach backend. If you are using college Wi-Fi, a firewall might be blocking the connection. Try a mobile hotspot, a VPN, or check if the backend server is running on port 5000.'
+        'Cannot reach backend. If you are using college Wi-Fi, a firewall might be blocking the connection. Try a mobile hotspot, a VPN, or check if the backend server is running on port 4000.'
       );
     }
     throw error;

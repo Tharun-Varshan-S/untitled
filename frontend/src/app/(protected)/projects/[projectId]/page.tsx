@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -11,6 +11,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useAnalyticsOverview } from '@/hooks/useAnalytics';
 import { useAnalyticsStream } from '@/hooks/useAnalyticsStream';
 import { LogTable } from '@/features/dashboard/components/LogTable';
+import { YourJarvis } from '@/features/dashboard/components/YourJarvis';
 import { useProjectStore } from '@/store';
 
 /**
@@ -27,6 +28,8 @@ export default function ProjectDetailPage({
   const { data: project, isLoading: isLoadingProject, error: projectError } = useProject(projectId);
   const { data: overview, isLoading: isLoadingOverview } = useAnalyticsOverview(projectId);
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject);
+  
+  const [activeTab, setActiveTab] = useState<'overview' | 'jarvis'>('overview');
 
   useAnalyticsStream(projectId || undefined);
 
@@ -85,33 +88,67 @@ export default function ProjectDetailPage({
           Settings
         </Link>
       </PageHeader>
-
-      {/* Metrics from /analytics/overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Logs"
-          value={(overview?.totalLogs ?? 0).toLocaleString()}
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
-        />
-        <MetricCard
-          title="Errors"
-          value={(overview?.totalErrors ?? 0).toLocaleString()}
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-        />
-        <MetricCard
-          title="Warnings"
-          value={(overview?.totalWarnings ?? 0).toLocaleString()}
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
-        />
-        <MetricCard
-          title="Services"
-          value={overview?.services ?? 0}
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" /></svg>}
-        />
+      
+      {/* Tabs Navigation */}
+      <div className="border-b border-[hsl(var(--border))]">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'overview'
+                ? 'border-indigo-500 text-indigo-400'
+                : 'border-transparent text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))] hover:border-[hsl(var(--border))]'
+            }`}
+          >
+            Overview & Logs
+          </button>
+          <button
+            onClick={() => setActiveTab('jarvis')}
+            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+              activeTab === 'jarvis'
+                ? 'border-indigo-500 text-indigo-400'
+                : 'border-transparent text-[hsl(var(--text-muted))] hover:text-[hsl(var(--text-primary))] hover:border-[hsl(var(--border))]'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            Your Jarvis
+          </button>
+        </nav>
       </div>
 
-      {/* Live Log Stream */}
-      <LogTable projectId={projectId} />
+      {activeTab === 'overview' ? (
+        <>
+          {/* Metrics from /analytics/overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Total Logs"
+              value={(overview?.totalLogs ?? 0).toLocaleString()}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
+            />
+            <MetricCard
+              title="Errors"
+              value={(overview?.totalErrors ?? 0).toLocaleString()}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            />
+            <MetricCard
+              title="Warnings"
+              value={(overview?.totalWarnings ?? 0).toLocaleString()}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
+            />
+            <MetricCard
+              title="Services"
+              value={overview?.services ?? 0}
+              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" /></svg>}
+            />
+          </div>
+
+          {/* Live Log Stream */}
+          <LogTable projectId={projectId} />
+        </>
+      ) : (
+        /* Your Jarvis / AI Copilot Tab */
+        <YourJarvis projectId={projectId} />
+      )}
     </div>
   );
 }

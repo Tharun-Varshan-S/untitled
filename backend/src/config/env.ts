@@ -29,6 +29,8 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   mongoUri,
   redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
+  aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://loglens-ai-service:8000/api/v1',
+  serviceKey: process.env.SERVICE_KEY ?? 'loglens-internal-secret-key',
   upload: {
     maxSizeMb: maxUploadSizeMb,
     maxSizeBytes: maxUploadSizeMb * 1024 * 1024,

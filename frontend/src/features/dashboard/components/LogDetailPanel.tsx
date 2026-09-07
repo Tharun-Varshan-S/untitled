@@ -76,6 +76,56 @@ export const LogDetailPanel: React.FC<LogDetailPanelProps> = ({ log, onClose }) 
             </div>
           </div>
 
+          {/* AI Analysis Section */}
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-[hsl(var(--text-muted))] uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-4 h-4 text-[hsl(var(--accent))]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              AI Analysis
+            </span>
+            <div className="bg-[#1C1C24] p-4 rounded-md border border-[hsl(var(--accent))/0.3] space-y-4">
+              {log.aiAnalysis ? (
+                <>
+                  <div>
+                    <span className="block text-xs text-[hsl(var(--text-muted))] mb-1">Summary</span>
+                    <p className="text-sm text-[hsl(var(--text-primary))]">{log.aiAnalysis.summary}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="block text-xs text-[hsl(var(--text-muted))] mb-1">Root Cause</span>
+                      <p className="text-sm text-[hsl(var(--text-primary))]">{log.aiAnalysis.rootCause}</p>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-[hsl(var(--text-muted))] mb-1">Suggested Fix</span>
+                      <p className="text-sm text-[hsl(var(--text-primary))]">{log.aiAnalysis.suggestedFix}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 pt-2 border-t border-[hsl(var(--border))/0.5]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[hsl(var(--text-muted))]">Confidence:</span>
+                      <span className="text-xs font-mono bg-[hsl(var(--surface-hover))] px-2 py-1 rounded">
+                        {Math.round(log.aiAnalysis.confidence * 100)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[hsl(var(--text-muted))]">Severity:</span>
+                      <span className="text-xs font-mono bg-[hsl(var(--surface-hover))] px-2 py-1 rounded capitalize">
+                        {log.aiAnalysis.severity}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-4 text-sm text-[hsl(var(--text-muted))]">
+                  <p>Not yet analyzed.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[hsl(var(--text-muted))] uppercase tracking-wider">Raw JSON</span>

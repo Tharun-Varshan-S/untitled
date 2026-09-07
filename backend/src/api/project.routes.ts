@@ -10,6 +10,7 @@ import {
   updateProjectController,
 } from '../controllers/project.controller';
 import { searchLogsUserContextController } from '../controllers/search.controller';
+import { chatController } from '../controllers/chat.controller';
 import projectApiKeysRoutes from './project-api-keys.routes';
 
 const router = Router();
@@ -27,5 +28,8 @@ router.use('/:id/api-keys', projectApiKeysRoutes);
 
 // Search logs within a project (via user auth)
 router.get('/:id/search', asyncHandler(searchLogsUserContextController));
+
+// Chat with AI Copilot
+router.post('/:id/chat', asyncHandler(chatController));
 
 export default router;

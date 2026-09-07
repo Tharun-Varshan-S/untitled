@@ -1,0 +1,418 @@
+Here are all 10, in order. Paste them one at a time — confirm each is merged before running the next; agentic tools drift if you stack unrelated file changes in one pass.
+
+```
+### PROMPT 1 — AI Service (client setup)
+
+<role>
+Senior backend engineer working directly inside my existing LogLens repo (Node.js/Express, MongoDB, BullMQ, Redis). Only make changes directly requested below. Do not add extra files, abstractions, or features.
+</role>
+
+<current_state>
+[LANGUAGE]: TypeScript if this repo already uses TS, otherwise plain JavaScript — check package.json/tsconfig.json first.
+No AI service exists yet. The worker has no LLM call in its pipeline.
+</current_state>
+
+<target_state>
+Standalone AI service module exporting a configured, singleton OpenAI SDK client, ready to be imported later. This step does NOT touch the worker, prompt builder, or queue logic.
+</target_state>
+
+<file_scope>
+Create: [SRC_ROOT]/services/aiService.[ts|js]
+Create: [SRC_ROOT]/config/openai.[ts|js]
+Do NOT touch: worker, queue, model, or controller files.
+If a config/env-loading pattern already exists, extend it instead of duplicating.
+</file_scope>
+
+<requirements>
+- Load API key from env var (e.g. OPENAI_API_KEY) — never hardcode, never log it.
+- Fail fast with a clear error at startup if the key is missing.
+- Singleton client — never construct a new client per call.
+- Set a request timeout on the client.
+- Config object for model name, timeout, max retries — no magic values.
+- Comment every non-trivial line: what and why.
+- Complete, pasteable files only — no partial code.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking first. No files outside file_scope. No direct edits to .env.
+</forbidden_actions>
+
+<done_when>
+aiService + openai config exist, compile/run cleanly. Missing OPENAI_API_KEY throws a clear error, not a silent later failure.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks and forbidden actions before pasting. Confirm file paths match your actual project.
+```
+
+```
+### PROMPT 2 — Prompt Builder
+
+<role>
+Same role and constraint as Prompt 1: only make changes directly requested.
+</role>
+
+<current_state>
+aiService.[ts|js] exists and exports a configured OpenAI client (from Prompt 1). No prompt-construction logic exists yet.
+</current_state>
+
+<target_state>
+A prompt-builder module that takes a raw log object and returns a finished prompt string/messages array instructing the model to return strict JSON with: summary, severity, rootCause, suggestedFix, confidence. Does NOT call the AI or touch the worker.
+</target_state>
+
+<file_scope>
+Create: [SRC_ROOT]/prompts/logAnalysisPrompt.[ts|js]
+Create: [SRC_ROOT]/prompts/templates/ (if templates warrant separate files)
+Do NOT touch: aiService, worker, queue files.
+</file_scope>
+
+<requirements>
+- Exported function buildLogAnalysisPrompt(logEntry) → string or messages array.
+- Explicit instruction in the prompt telling the model to output ONLY valid JSON matching a defined schema (no prose, no markdown fences).
+- Sanitize/escape any untrusted log content interpolated into the prompt (basic prompt-injection guard: strip/neutralize instruction-like phrases from raw log text before interpolation).
+- Truncate overly long log/stack content to a configurable max character length before interpolation.
+- Comment every non-trivial line: what and why.
+- Complete file only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking. No files outside file_scope. Do not call the OpenAI client from this module.
+</forbidden_actions>
+
+<done_when>
+buildLogAnalysisPrompt runs against a sample log object and returns a well-formed prompt string containing the JSON schema instruction and the sanitized log content.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 3 — Worker Integration
+
+<role>
+Same role and constraint as above.
+</role>
+
+<current_state>
+aiService (Prompt 1) and logAnalysisPrompt builder (Prompt 2) exist. The BullMQ worker processes jobs but never calls the AI.
+</current_state>
+
+<target_state>
+Wire the worker to: fetch the log for the job → build the prompt → call the OpenAI client → receive the raw response. Stop at "receive response" — do NOT add validation or MongoDB writes yet (that's Prompts 4–5).
+</target_state>
+
+<file_scope>
+Edit: [SRC_ROOT]/workers/[existing worker file, e.g. logAnalysisWorker.ts] — locate the exact file, do not create a duplicate worker.
+Do NOT touch: prompt builder, aiService, models.
+</file_scope>
+
+<requirements>
+- Import aiService client and buildLogAnalysisPrompt; do not reimplement either.
+- Wrap the OpenAI call in try/catch with a typed/documented error path (log the failure, mark job for retry per existing BullMQ retry config — do not invent a new retry system here).
+- Add a timeout guard around the AI call distinct from the client's own timeout, so a hung call doesn't block the worker concurrency slot indefinitely.
+- Log job id, log id, and outcome (success/failure) — never log the full prompt or full API key.
+- Comment every non-trivial line.
+- Complete file — show the full modified worker, not a diff fragment.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking. No files outside file_scope. Do not add MongoDB writes or JSON validation yet.
+</forbidden_actions>
+
+<done_when>
+Running a job through the worker triggers fetch → prompt build → AI call → response received, with errors caught and logged, without crashing the worker process.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 4 — Structured Output Validation
+
+<role>
+Same role and constraint as above.
+</role>
+
+<current_state>
+Worker (Prompt 3) receives a raw AI response but does not validate or parse it.
+</current_state>
+
+<target_state>
+A validation module that parses the AI's JSON response, checks it against the required schema (summary, severity, rootCause, suggestedFix, confidence), and triggers a bounded retry if invalid. Worker calls this module after receiving the response.
+</target_state>
+
+<file_scope>
+Create: [SRC_ROOT]/validators/aiResponseValidator.[ts|js]
+Edit: the worker file from Prompt 3 — add the validation call only, no unrelated changes.
+Do NOT touch: aiService, prompt builder.
+</file_scope>
+
+<requirements>
+- Strip markdown code fences if the model wraps JSON in them before parsing.
+- Validate required fields exist and have correct types (severity is one of a fixed enum, confidence is a number in [0,1], etc.) — use a schema validation approach appropriate to this repo (Zod/Joi if already a dependency, otherwise a plain hand-written check; do not add a new validation library without asking).
+- On invalid JSON or missing fields: retry the AI call up to a configurable max (e.g. 2 retries) before marking the job failed.
+- On exhausted retries: log full failure context (without leaking secrets) and mark the job failed per existing BullMQ failure handling.
+- Comment every non-trivial line.
+- Complete files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking first. No files outside file_scope.
+</forbidden_actions>
+
+<done_when>
+A malformed AI response is caught, retried up to the max, and cleanly fails the job (not the whole worker process) if still invalid after retries. A valid response passes through unchanged.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 5 — Store AI Analysis
+
+<role>
+Same role and constraint as above.
+</role>
+
+<current_state>
+Worker (Prompt 3+4) produces a validated JSON object: summary, severity, rootCause, suggestedFix, confidence. Nothing persists it yet.
+</current_state>
+
+<target_state>
+Persist the validated analysis to MongoDB, linked to the originating log document. Worker calls this after successful validation.
+</target_state>
+
+<file_scope>
+Edit: [SRC_ROOT]/models/[existing log model file] — add an aiAnalysis subdocument/schema field if the model needs it (do not create a second collection unless one already exists for this purpose — check first).
+Create: [SRC_ROOT]/services/analysisStorageService.[ts|js] (save/update logic, kept separate from the raw Mongoose/MongoDB model).
+Edit: worker file — add the storage call only.
+Do NOT touch: validator, prompt builder, aiService.
+</file_scope>
+
+<requirements>
+- Store summary, severity, rootCause, suggestedFix, confidence, plus a timestamp and the model name used.
+- Use an update/upsert keyed on the log's existing id — do not create duplicate log documents.
+- Wrap the DB write in try/catch; a DB failure should not lose the AI result silently — log it with enough context to retry manually if needed.
+- Comment every non-trivial line.
+- Complete files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking. No files outside file_scope. Do not touch dashboard/frontend code in this step.
+</forbidden_actions>
+
+<done_when>
+Running a job end-to-end results in the log document (or linked collection) containing the AI analysis fields in MongoDB, verifiable by a direct query.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 6 — Dashboard Integration
+
+<role>
+Same role and constraint as above, now working in the Next.js/React frontend.
+</role>
+
+<current_state>
+MongoDB log documents now include AI analysis fields (Prompt 5). The dashboard currently displays logs without AI data.
+</current_state>
+
+<target_state>
+Dashboard log detail view (and/or list view, per existing layout) displays AI summary, severity, suggested fix, and confidence for logs that have been analyzed. Logs without analysis show a neutral "not yet analyzed" state, not an error.
+</target_state>
+
+<file_scope>
+Edit: [FRONTEND_SRC]/[existing log detail component, e.g. components/LogDetail.tsx]
+Edit or create: a TanStack Query hook for fetching the log's AI analysis if one doesn't already exist (e.g. hooks/useLogAnalysis.ts) — reuse existing query patterns in this repo, don't invent a new data-fetching convention.
+Do NOT touch: backend files, models, worker.
+</file_scope>
+
+<requirements>
+- Match the existing component/styling conventions already in this codebase — do not introduce a new UI library or design system.
+- Severity should be visually distinguishable (e.g. color-coded badge) using whatever styling approach this repo already uses.
+- Confidence displayed as a percentage or fixed decimal, not a raw float dump.
+- Handle loading and "not analyzed yet" states explicitly — no undefined/blank flashes.
+- Comment non-trivial logic.
+- Complete component files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies (charting/UI libraries) without asking. No files outside file_scope.
+</forbidden_actions>
+
+<done_when>
+Opening a log with AI analysis shows summary/severity/fix/confidence correctly; opening one without analysis shows a clean placeholder, no crash or console error.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 7 — Duplicate Detection
+
+<role>
+Same role and constraint as above.
+</role>
+
+<current_state>
+Every job triggers a fresh AI call (Prompts 1–5 pipeline), even for logs that are functionally identical to previously analyzed ones.
+</current_state>
+
+<target_state>
+Hash incoming log content before analysis; if a matching hash already has a stored analysis, reuse it and skip the AI call entirely.
+</target_state>
+
+<file_scope>
+Create: [SRC_ROOT]/utils/logHash.[ts|js] (deterministic hash of normalized log content — message + stack signature, excluding volatile fields like timestamps/request ids).
+Edit: worker file — add a hash lookup before the AI-call step from Prompt 3.
+Edit: log model (from Prompt 5) — add an indexed hash field if not already present.
+Do NOT touch: prompt builder, aiService, validator.
+</file_scope>
+
+<requirements>
+- Normalize log content before hashing (strip timestamps, request ids, and other run-specific noise) so semantically identical errors hash the same.
+- Add a DB index on the hash field for fast lookup — call this out explicitly in a comment since it's a schema change.
+- On hash match: copy the prior analysis onto the new log document and skip the AI call; log this as a "cache hit" for observability.
+- On no match: proceed with the normal pipeline from Prompt 3.
+- Comment every non-trivial line.
+- Complete files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking. No files outside file_scope. Do not change the hash algorithm mid-implementation without flagging it.
+</forbidden_actions>
+
+<done_when>
+Submitting two jobs with identical normalized log content results in exactly one AI API call and two documents with matching analysis.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 8 — Log Filtering
+
+<role>
+Same role and constraint as above.
+</role>
+
+<current_state>
+Every log that reaches the worker gets analyzed (post-duplicate-check), including INFO/DEBUG and successful-request logs that don't need AI analysis.
+</current_state>
+
+<target_state>
+Filter out non-actionable logs (INFO, DEBUG, successful requests) before they're even enqueued for AI analysis — or at worker entry, whichever matches this repo's existing filtering point.
+</target_state>
+
+<file_scope>
+Edit: [SRC_ROOT]/[the point where jobs are enqueued, e.g. controllers/logIngestController.ts, or worker entry] — locate the actual enqueue/entry point, do not guess a new one.
+Create: [SRC_ROOT]/utils/logFilter.[ts|js] — pure function isAnalysisWorthy(logEntry) → boolean.
+Do NOT touch: hash logic, prompt builder, aiService.
+</file_scope>
+
+<requirements>
+- Filter rule set as a configurable list/enum (log levels and status-code ranges to skip), not hardcoded inline conditionals scattered around.
+- Filtered-out logs still get stored normally (for search/audit) — they're just never sent to the AI pipeline.
+- Log a debug-level note when a log is skipped, for observability.
+- Comment every non-trivial line.
+- Complete files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking. No files outside file_scope. Do not delete or drop skipped logs.
+</forbidden_actions>
+
+<done_when>
+An INFO-level or 2xx-success log never triggers a BullMQ AI-analysis job; an ERROR-level log still does.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 9 — Stack Trace Optimization
+
+<role>
+Same role and constraint as above.
+</role>
+
+<current_state>
+Prompt builder (Prompt 2) interpolates raw log/stack content with only a max-length truncation; long stack traces waste tokens without adding useful signal.
+</current_state>
+
+<target_state>
+Compress stack traces before they reach the prompt builder: keep the top N frames and any frames referencing this project's own source (drop framework/node_modules noise), collapsing the rest.
+</target_state>
+
+<file_scope>
+Create: [SRC_ROOT]/utils/stackTraceCompressor.[ts|js]
+Edit: logAnalysisPrompt.[ts|js] (Prompt 2) — call the compressor before interpolating stack content. This is the one explicitly allowed edit to that file.
+Do NOT touch: worker, aiService, validator.
+</file_scope>
+
+<requirements>
+- Exported function compressStackTrace(rawStack, options) → compressed string.
+- Configurable frame count to keep (default reasonable, e.g. top 5–8 frames).
+- Prioritize frames matching this project's own path patterns over node_modules/vendor frames.
+- Indicate omitted frames with a short marker (e.g. "...N frames omitted...") rather than silently dropping them, so the model knows context was trimmed.
+- Comment every non-trivial line.
+- Complete files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking. No files outside file_scope.
+</forbidden_actions>
+
+<done_when>
+A 100+ line stack trace is compressed to the configured frame count plus an omission marker, and the prompt builder uses the compressed version, not the raw one.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+```
+### PROMPT 10 — Production Hardening
+
+<role>
+Same role and constraint as above. This is the final pass — audit and harden, don't rebuild.
+</role>
+
+<current_state>
+Full pipeline exists from Prompts 1–9: filtering → hashing → prompt build (with compression) → AI call → validation → storage → dashboard.
+</current_state>
+
+<target_state>
+Harden the existing pipeline: confirm/add retries and timeouts at every external call boundary, add prompt-injection resistance, mask secrets in all logs, add response caching where missing, add basic rate limiting on the AI call path, and add observability (structured logs/metrics) at each pipeline stage.
+</target_state>
+
+<file_scope>
+Edit only, no new pipeline logic: aiService (Prompt 1), worker (Prompt 3), validator (Prompt 4), prompt builder (Prompt 2).
+Create: [SRC_ROOT]/middleware/rateLimiter.[ts|js] if no AI-specific rate limiting exists yet.
+Create: [SRC_ROOT]/utils/logSanitizer.[ts|js] for consistent secret-masking across all log statements in the pipeline.
+</file_scope>
+
+<requirements>
+- Audit every existing external call (OpenAI, MongoDB) for a timeout and a bounded retry with backoff; add what's missing, don't duplicate what exists.
+- Prompt-injection guard: verify Prompt 2's sanitization actually neutralizes instruction-like phrases in log content (e.g. "ignore previous instructions") — strengthen if it only does basic escaping.
+- Secret masking: replace any API keys, tokens, or credential-looking strings in log output with a fixed redaction marker (e.g. process every log call through logSanitizer, don't rely on manual discipline).
+- Rate limiting: cap AI-analysis job throughput (e.g. jobs per minute per worker) to avoid burning through API quota on a log storm.
+- Observability: emit a structured event (stage name, log id, duration, outcome) at each major pipeline stage — reuse this repo's existing logging library, don't add a new one without asking.
+- Comment every non-trivial line.
+- Complete files only.
+</requirements>
+
+<forbidden_actions>
+No new dependencies without asking first. No files outside file_scope. Do not change the pipeline's overall shape — this is hardening, not redesign.
+</forbidden_actions>
+
+<done_when>
+Simulating an OpenAI timeout triggers a bounded retry then a clean failure (no crash). A log containing an embedded API key never appears unmasked in logs. A burst of 1000 logs doesn't exceed the configured AI call rate.
+</done_when>
+
+This prompt is for an agentic tool with real system access. Review scope locks before pasting. Confirm paths match your actual project.
+```
+
+🎯 Target: Cursor / Windsurf — 💡 Kept the 10-lesson structure from your original but converted every one into a file-anchored, single-deliverable agentic prompt (current/target state → file scope → done-when), since IDE agents given the whole roadmap at once tend to touch unrelated files or half-finish steps.
+
+Fill in `[SRC_ROOT]` and `[FRONTEND_SRC]` once at the top of Prompt 1 — they carry the same meaning through all 10.

@@ -9,8 +9,8 @@
  *   5. Open http://localhost:3000/dashboard to watch logs stream live!
  */
 
-const LOGLENS_URL = 'http://localhost:5000/api/v1/logs/ingest';
-const API_KEY = 'YOUR_API_KEY_HERE'; // <-- Put your generated LogLens API Key here
+const LOGLENS_URL = 'http://127.0.0.1:5000/api/v1/logs/ingest';
+const API_KEY = 'll_test_apikey_12345'; // <-- Put your generated LogLens API Key here
 
 async function sendLog(level, message, service, metadata = {}) {
   try {

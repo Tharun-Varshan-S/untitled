@@ -17,6 +17,13 @@ export interface SharedLogResponse {
   metadata?: Record<string, unknown> | undefined;
   createdAt: string | Date;
   timestamp?: string | Date;
+  aiAnalysis?: {
+    summary: string;
+    severity: string;
+    rootCause: string;
+    suggestedFix: string;
+    confidence: number;
+  };
 }
 
 export interface SharedAnalyticsUpdatePayload {

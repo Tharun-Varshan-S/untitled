@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = process.env.NODE_ENV === 'development';
 
 export const ingestionRateLimiter = rateLimit({
   windowMs: 60 * 1000,

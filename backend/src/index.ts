@@ -18,8 +18,12 @@ const startServer = async (): Promise<http.Server> => {
   await connectRedis();
 
   // Instantiate embedded worker for zero-config queue processing
-  const logWorker = createLogWorker('embedded-worker');
-  logger.info('✅ Embedded BullMQ Log Worker initialized & listening for jobs.');
+  if (process.env.DISABLE_EMBEDDED_WORKER !== 'true') {
+    const logWorker = createLogWorker('embedded-worker');
+    logger.info('✅ Embedded BullMQ Log Worker initialized & listening for jobs.');
+  } else {
+    logger.info('✅ Embedded BullMQ Log Worker is disabled (running as standalone).');
+  }
 
   const server = http.createServer(app);
   await initializeSocket(server);

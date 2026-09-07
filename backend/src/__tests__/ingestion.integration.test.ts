@@ -79,15 +79,13 @@ describe('POST /api/v1/logs/ingest', () => {
       .set('x-api-key', rawKey)
       .send(validLog());
 
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(202);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toMatchObject({
-      level: 'info',
-      message: 'Service started',
-      service: 'auth-service',
+      status: 'queued',
       projectId,
     });
-    expect(res.body.data.id).toBeDefined();
+    expect(res.body.data.jobId).toBeDefined();
   });
 
   it('400 – missing level returns LOG_LEVEL_REQUIRED', async () => {
@@ -170,10 +168,10 @@ describe('POST /api/v1/logs/bulk', () => {
       .set('x-api-key', rawKey)
       .send(batch);
 
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(202);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.totalReceived).toBe(batch.length);
-    expect(res.body.data.totalInserted).toBe(batch.length);
+    expect(res.body.data.enqueuedCount).toBe(batch.length);
+    expect(res.body.data.status).toBe('queued');
   });
 
   it('400 – empty array is rejected', async () => {

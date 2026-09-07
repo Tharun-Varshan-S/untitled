@@ -12,6 +12,19 @@ export interface LogDocument extends Document {
   timestamp: Date;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Deduplication hash for AI analysis
+  logHash?: string;
+  // Subdocument storing the AI root-cause analysis
+  aiAnalysis?: {
+    summary: string;
+    severity: string;
+    rootCause: string;
+    suggestedFix: string;
+    confidence: number;
+    modelUsed: string;
+    analyzedAt: Date;
+  };
 }
 
 const logSchema = new Schema<LogDocument>(
@@ -49,6 +62,22 @@ const logSchema = new Schema<LogDocument>(
       type: Date,
       default: () => new Date(),
       index: true,
+    },
+    logHash: {
+      type: String,
+      index: true, // For fast duplicate lookups
+    },
+    aiAnalysis: {
+      type: {
+        summary: String,
+        severity: String,
+        rootCause: String,
+        suggestedFix: String,
+        confidence: Number,
+        modelUsed: String,
+        analyzedAt: Date,
+      },
+      required: false,
     },
   },
   {

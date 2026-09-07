@@ -184,81 +184,78 @@ If a job payload fails schema validation (e.g. invalid version or missing requir
 
 ---
 
-## Quickstart Guide: Running LogLens Locally
+## Quickstart Guide: Running LogLens
 
-### Prerequisites
-Make sure you have the following installed on your machine:
-- **Node.js** (v18.0.0 or higher)
-- **npm** (v9.0.0 or higher)
-- **Docker & Docker Compose** (or local installations of MongoDB & Redis)
+You can run the entire LogLens architecture using either Docker (One-Click Setup) or Locally (for active development).
+
+### Method 1: Running Everything with Docker (Recommended)
+
+LogLens includes a master `docker-compose.yml` file that orchestrates the entire application (Frontend, Node Backend, FastAPI AI Service, and Redis).
+
+1. Ensure Docker Desktop is installed and running on your machine.
+2. From the root `loglens/` directory, run this command to build and start everything:
+   ```bash
+   docker-compose up --build
+   ```
+   *(Wait until you see `Server started on port 4000` and `Ready in XXXms` for the frontend)*
+
+   **💡 Pro Tip:** You only need the `--build` flag the very first time, or if you install new NPM packages/change the source code. For everyday use, you can just run:
+   ```bash
+   docker-compose up
+   ```
+
+3. **Where to go in your browser:**
+   - **The Dashboard (Frontend):** Open **[http://localhost:3000](http://localhost:3000)** to interact with the app.
+   - **Node.js API (Backend):** Runs on `http://localhost:4000` (Note: opening this directly in a browser will show `Cannot GET /` because it's a backend API without a homepage. This is expected!)
+   - **AI Service:** Runs on `http://localhost:8000` (Also an API, opening directly will show `{"detail":"Not Found"}`).
+
+   *Note: If you see Chrome Developer Tools CSP (Content Security Policy) errors like `content.js` or `.well-known/appspecific/com.chrome.devtools.json` in the console of `localhost:3000`, you can safely ignore them. These are caused by your browser extensions (like React DevTools or Adblockers) and do not affect the LogLens app.*
+
+4. **Health Checks (How to verify it's working):**
+   If you want to verify the APIs are up and healthy, you can check these endpoints:
+   - **AI Service Health:** Open `http://localhost:8000/health` (Should return `{"status": "ok"}`)
+   - **Backend Queue Health:** Open `http://localhost:4000/api/v1/queues/metrics` (Should return JSON with queue stats)
+   - **BullMQ Dashboard:** Open `http://localhost:4000/admin/queues` to see the live queue processor UI.
+
+5. **Stopping the Application:**
+   To stop all services, press `Ctrl+C` in your terminal, and then clean up the network by running:
+   ```bash
+   docker-compose down
+   ```
 
 ---
 
-### Step 1: Start Redis & MongoDB Containers
-LogLens includes a ready-to-use `docker-compose.yml` file.
+### Method 2: Running Locally (For Active Development)
 
+If you are actively coding and want hot-reloading enabled, you should run the services locally in separate terminal windows. 
+
+**Terminal 1: Start Redis**
+Use Docker to spin up just the database layer in the background:
 ```bash
-docker-compose up -d
-```
-*This starts MongoDB on `localhost:27017` and Redis on `localhost:6379`.*
-
----
-
-### Step 2: Configure Environment Variables
-
-**Backend Configuration (`backend/.env`):**
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/loglens
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your_super_secret_jwt_key_here
-NODE_ENV=development
-WORKER_CONCURRENCY=10
+docker-compose up -d redis
 ```
 
-**Frontend Configuration (`frontend/.env.local`):**
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
-```
-
----
-
-### Step 3: Start the Backend Server & Worker
-
-In your terminal:
+**Terminal 2: Start the Node.js Backend**
 ```bash
 cd backend
 npm install
 npm run dev
 ```
 
-To run a dedicated worker process separately in production:
+**Terminal 3: Start the FastAPI AI Service**
 ```bash
-cd backend
-npm run dev:worker
+cd loglens-ai
+source venv/bin/activate
+uvicorn app.main:app --reload
 ```
 
-*Output:*
-```
-[INFO] Database connected
-[INFO] Redis connected successfully. PING -> PONG
-[INFO] BullMQ Queue 'log-ingestion' initialized.
-[INFO] Server running on http://localhost:5000
-```
-
----
-
-### Step 4: Start the Frontend Application
-
-In a new terminal window:
-
+**Terminal 4: Start the Next.js Frontend**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-*Open [http://localhost:3000](http://localhost:3000) in your browser.*
+*Open [http://localhost:3000](http://localhost:3000) (or 5173 depending on your dev script) in your browser.*
 
 ---
 

@@ -204,7 +204,7 @@ describe('Analytics — invalid projectId', () => {
       .query({ projectId: 'not-a-valid-object-id' });
 
     expect(res.status).toBe(400);
-    expect(res.body.errorCode).toBe('INVALID_PROJECT_ID');
+    expect(res.body.errorCode).toBe('INVALID_ID');
   });
 
   it.each(endpoints)('GET /analytics%s returns 400 PROJECT_ID_REQUIRED when projectId is missing', async (path) => {

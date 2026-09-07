@@ -1,10 +1,12 @@
+version: '3.8'
+
 services:
   redis:
     image: redis:7-alpine
     container_name: loglens-redis
-    restart: always
-    ports:
-      - '6379:6379'
+    restart: unless-stopped
+    # Exposing the port only internally or securely. Usually we don't expose it to the host in prod.
+    # We remove ports: - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
@@ -12,6 +14,83 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: loglens-node-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - REDIS_URL=redis://redis:6379
+      - AI_SERVICE_URL=http://ai-service:8000/api/v1
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DISABLE_EMBEDDED_WORKER=true
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: loglens-node-worker
+    command: ["npm", "run", "start:worker"]
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - WORKER_CONCURRENCY=10
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./loglens-ai
+      dockerfile: Dockerfile
+    container_name: loglens-ai-service
+    # No exposed ports to host, keep it internal to Docker network
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - MODEL=llama-3.3-70b-versatile
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: loglens-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+      - NEXT_PUBLIC_SOCKET_URL=http://localhost:4000
+      - NEXT_PUBLIC_BULL_BOARD_URL=http://localhost:4000/admin/queues
+      - INTERNAL_API_URL=http://backend:4000/api/v1
+    restart: unless-stopped
+    depends_on:
+      - backend
 
 volumes:
   redis_data:

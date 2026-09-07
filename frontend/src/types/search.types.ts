@@ -9,6 +9,13 @@ export interface LogResponse {
   source: string;
   metadata?: Record<string, any>;
   timestamp: string;
+  aiAnalysis?: {
+    summary: string;
+    severity: string;
+    rootCause: string;
+    suggestedFix: string;
+    confidence: number;
+  };
 }
 
 export interface SearchResponse {
