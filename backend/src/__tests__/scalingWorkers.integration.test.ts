@@ -1,5 +1,6 @@
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { logQueue } from '../jobs/log.queue';
-import { createLogWorker, logWorker } from '../jobs/log.worker';
+import { createLogWorker, logWorker, logQueueEvents } from '../jobs/log.worker';
 import { addDelayedAiAnalysisJob, addDelayedNotificationJob } from '../jobs/log.producer';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,6 +14,7 @@ describe('Worker Scaling & Concurrency Integration Test', () => {
   afterAll(async () => {
     await logWorker.close();
     await logQueue.close();
+    await logQueueEvents.close();
   });
 
   it('should process jobs concurrently across multiple worker instances with zero duplicates', async () => {
@@ -30,7 +32,7 @@ describe('Worker Scaling & Concurrency Integration Test', () => {
     // Enqueue 10 immediate jobs
     for (let i = 0; i < 10; i++) {
       if (i % 2 === 0) {
-        await addDelayedAiAnalysisJob('proj_scaling_test', 'anomaly', 0);
+        await addDelayedAiAnalysisJob('proj_scaling_test', 'error_spike', 0);
       } else {
         await addDelayedNotificationJob(
           'proj_scaling_test',

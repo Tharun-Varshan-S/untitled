@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { logQueue } from '../jobs/log.queue';
 import { initLogLensSchedulers, listActiveSchedulers, removeLogLensScheduler } from '../jobs/log.scheduler';
 import { SCHEDULER_IDS } from '../jobs/config/scheduler.config';
-import { logWorker } from '../jobs/log.worker';
+import { logWorker, logQueueEvents } from '../jobs/log.worker';
 
 describe('Repeatable (Scheduled) Jobs Integration Test', () => {
   beforeAll(async () => {
@@ -16,6 +16,7 @@ describe('Repeatable (Scheduled) Jobs Integration Test', () => {
     await removeLogLensScheduler(SCHEDULER_IDS.DAILY_LOG_CLEANUP);
     await logWorker.close();
     await logQueue.close();
+    await logQueueEvents.close();
   });
 
   it('should register repeatable job schedulers idempotently in Redis', async () => {

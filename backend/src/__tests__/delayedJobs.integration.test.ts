@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { logQueue } from '../jobs/log.queue';
 import { addDelayedAiAnalysisJob, addDelayedNotificationJob } from '../jobs/log.producer';
-import { logWorker } from '../jobs/log.worker';
+import { logWorker, logQueueEvents } from '../jobs/log.worker';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -15,6 +15,7 @@ describe('Delayed Jobs Integration Test', () => {
   afterAll(async () => {
     await logWorker.close();
     await logQueue.close();
+    await logQueueEvents.close();
   });
 
   it('should enqueue a job with delay and hold it in delayed state before processing', async () => {

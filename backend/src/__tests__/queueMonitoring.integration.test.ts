@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import app from '../app';
 import { logQueue } from '../jobs/log.queue';
-import { logWorker } from '../jobs/log.worker';
+import { logWorker, logQueueEvents } from '../jobs/log.worker';
 import { getQueueMetrics } from '../jobs/log.monitoring';
 
 describe('Queue Monitoring Integration & API Tests', () => {
@@ -14,6 +14,7 @@ describe('Queue Monitoring Integration & API Tests', () => {
   afterAll(async () => {
     await logWorker.close();
     await logQueue.close();
+    await logQueueEvents.close();
   });
 
   it('should return queue metrics from getQueueMetrics() inspection helper', async () => {
