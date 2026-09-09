@@ -1,3 +1,4 @@
+import { describe, test, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -24,8 +25,13 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { disconnectDB } = require('../config/database');
   await disconnectDB();
   if (mongod) await mongod.stop();
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { logQueue } = require('../jobs/log.queue');
+  await logQueue.close();
 });
 
 test('create project, create api key, authenticate with key', async () => {

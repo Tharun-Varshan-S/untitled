@@ -1,8 +1,10 @@
 import { sanitizeLogOutput } from '../../utils/logSanitizer';
 import { RETRY_POLICIES } from '../../jobs/config/retry.config';
 import { ingestionRateLimiter, analyticsRateLimiter } from '../../middleware/rateLimiter.middleware';
+import { describe, test, it, expect, beforeAll, afterAll, beforeEach, afterEach, jest } from '@jest/globals';
 import express from 'express';
 import request from 'supertest';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
 describe('Hardening and Security Controls', () => {
 
@@ -156,8 +158,8 @@ describe('Hardening and Security Controls', () => {
 
     it('27. should include rate limit headers for ingestion', async () => {
       const res = await request(app).get('/ingest');
-      expect(res.headers['x-ratelimit-limit']).toBe('120');
-      expect(res.headers['x-ratelimit-remaining']).toBeDefined();
+      expect(res.headers['ratelimit-limit']).toBe('120');
+      expect(res.headers['ratelimit-remaining']).toBeDefined();
     });
 
     it('28. should allow requests under the limit for analytics', async () => {
@@ -168,7 +170,7 @@ describe('Hardening and Security Controls', () => {
 
     it('29. should include rate limit headers for analytics', async () => {
       const res = await request(app).get('/analytics');
-      expect(res.headers['x-ratelimit-limit']).toBe('60');
+      expect(res.headers['ratelimit-limit']).toBe('60');
     });
     
     it('30. should return appropriate error object when rate limited (simulated)', () => {
@@ -184,10 +186,15 @@ describe('Hardening and Security Controls', () => {
     // Generate remaining filler tests to ensure we reach 40 tests across the suite as requested.
     // Testing edge cases in rate limiting skipping logic:
     describe('Rate Limiter Env Skip Logic', () => {
+      beforeEach(() => {
+        jest.resetModules();
+      });
+      
       it('31. should skip rate limiter in development for ingestion', async () => {
         process.env.NODE_ENV = 'development';
+        const { ingestionRateLimiter: dynamicIngestionLimiter } = require('../../middleware/rateLimiter.middleware');
         const testApp = express();
-        testApp.get('/ingest', ingestionRateLimiter, (req, res) => { res.send('OK'); });
+        testApp.get('/ingest', dynamicIngestionLimiter, (req, res) => { res.send('OK'); });
         const res = await request(testApp).get('/ingest');
         expect(res.status).toBe(200);
         // It's skipped, so no ratelimit-limit header
@@ -197,8 +204,9 @@ describe('Hardening and Security Controls', () => {
 
       it('32. should skip rate limiter in development for analytics', async () => {
         process.env.NODE_ENV = 'development';
+        const { analyticsRateLimiter: dynamicAnalyticsLimiter } = require('../../middleware/rateLimiter.middleware');
         const testApp = express();
-        testApp.get('/analytics', analyticsRateLimiter, (req, res) => { res.send('OK'); });
+        testApp.get('/analytics', dynamicAnalyticsLimiter, (req, res) => { res.send('OK'); });
         const res = await request(testApp).get('/analytics');
         expect(res.status).toBe(200);
         expect(res.headers['ratelimit-limit']).toBeUndefined();

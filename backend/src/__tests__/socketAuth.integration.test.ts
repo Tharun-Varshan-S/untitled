@@ -1,11 +1,8 @@
+import { describe, test, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import { Server } from 'socket.io';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
 import http from 'http';
-import { socketAuthMiddleware } from '../socket/auth/index';
-import { signJwt } from '../utils/jwt';
-import mongoose from 'mongoose';
-import { connectDB, disconnectDB } from '../config/database';
-import User from '../models/User';
+
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
 let mongod: MongoMemoryServer;
@@ -18,11 +15,20 @@ describe('Socket.IO Authentication', () => {
   let validUser: any;
   let validToken: string;
   let port: number;
+  let socketAuthMiddleware: any;
+  let signJwt: any;
+  let User: any;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
     process.env.MONGODB_URI = mongod.getUri();
     process.env.NODE_ENV = 'test';
+    
+    // Defer imports to avoid early config evaluation
+    socketAuthMiddleware = require('../socket/auth/index').socketAuthMiddleware;
+    signJwt = require('../utils/jwt').signJwt;
+    User = require('../models/User').default;
+    const { connectDB } = require('../config/database');
     
     await connectDB();
     
@@ -38,6 +44,7 @@ describe('Socket.IO Authentication', () => {
 
   afterAll(async () => {
     await User.deleteMany({ email: 'socketest@example.com' });
+    const { disconnectDB } = require('../config/database');
     await disconnectDB();
     if (mongod) {
       await mongod.stop();

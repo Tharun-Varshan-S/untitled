@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -68,6 +69,9 @@ afterAll(async () => {
   const { disconnectDB } = require('../config/database');
   await disconnectDB();
   if (mongod) await mongod.stop();
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { logQueue } = require('../jobs/log.queue');
+  await logQueue.close();
 });
 
 // ─── single ingest ───────────────────────────────────────────────────────────
