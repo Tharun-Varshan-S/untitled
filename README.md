@@ -24,50 +24,34 @@ When software applications scale to millions of users, microservices generate mi
 
 ---
 
-## High-Level System Architecture
+## 🏗️ System Architecture
 
-```mermaid
-graph TD
-    Client[Web Client - Next.js 16] <-->|REST API & WebSockets| Gateway[Node.js Express Backend]
-    
-    subgraph Ingestion & Queue Pipeline [Phase P: Distributed Async Queue]
-        Gateway -->|1. Enqueue Payload| Queue[BullMQ Log Ingestion Queue]
-        Queue <-->|State & Storage| Redis[(Redis Server)]
-        Worker[BullMQ Worker Processes] -->|2. Pull Jobs| Queue
-    end
-    
-    subgraph Data & Storage Layer
-        Worker -->|3. Persist Logs| Mongo[(MongoDB Database)]
-    end
-    
-    subgraph Real-Time & AI Subsystems
-        Worker -->|4. Broadcast Log Event| Socket[Socket.IO Server]
-        Socket -->|5. Push Stream| Client
-        Worker -->|6. Debounced AI Task| AI[AI Root Cause Engine]
-    end
-```
+LogLens employs an asynchronous, distributed architecture designed to ingest high-volume log streams without blocking user requests. The architecture is structured to provide high availability, real-time observability, and AI-driven insights.
 
----
+### 1. High-Level Overview
+![Conceptual Architecture](docs/architecture/conceptual-architecture.svg)
 
-## Background Queue Architecture (Phase P Pipeline)
+The system is broken down into four core layers:
+- **Ingestion Layer:** Receives logs via a REST API and instantly enqueues them (HTTP 202 Accepted, < 5ms).
+- **Buffer/Queue Pipeline:** Utilizes **BullMQ** and **Redis** to safely buffer incoming traffic, preventing data loss during traffic spikes and outages.
+- **Storage Layer:** Background worker nodes process jobs from the queue and persist normalized log data into **MongoDB**.
+- **Real-Time & AI Subsystems:** 
+  - **Socket.IO** broadcasts new logs instantly to connected Web Clients.
+  - Debounced triggers invoke the **FastAPI AI Engine** to analyze root causes of high-severity error spikes.
 
-```mermaid
-flowchart LR
-    Producer[Log Producer] -->|Add Job| Queue{BullMQ Queue}
-    
-    Queue -->|Immediate| Wait[LIST: wait]
-    Queue -->|opts.delay| Delayed[ZSET: delayed]
-    Queue -->|repeat / Cron| Scheduler[Job Scheduler]
-    
-    Delayed -->|Timestamp Reached| Wait
-    Scheduler -->|Interval Tick| Wait
-    
-    Wait -->|Dequeue| Worker[BullMQ Worker Cluster]
-    
-    Worker -->|Success| Complete[Completed State]
-    Worker -->|Validation Fail| Fatal[UnrecoverableError -> Failed]
-    Worker -->|Transient Fail| Retry[Exponential Backoff -> Retry]
-```
+### 2. Component Architecture
+![Component Architecture](docs/architecture/component-architecture.svg)
+
+### 3. Data Flow Lifecycle
+![Sequence Diagram](docs/architecture/sequence-diagram.svg)
+
+1. **Generation:** Applications integrate the `loglens-sdk` to send asynchronous log payloads.
+2. **Buffering:** The Node.js Express API Gateway receives the payload and adds the job to BullMQ (`delayed`, `waiting`, or `scheduled`).
+3. **Processing:** Independent worker clusters pull jobs from Redis, validate the payloads, and insert them into MongoDB.
+4. **Broadcasting:** Worker nodes emit events to Socket.IO rooms, pushing live data to the Next.js dashboard.
+5. **AI Analysis:** Anomalies or error spikes trigger the Python FastAPI AI service for semantic root-cause analysis.
+
+> **💡 Note:** For more detailed diagrams including **Deployment Infrastructure** and **Data Flow (Level 1 DFD)**, explore the [`docs/architecture`](docs/architecture/) directory or open the interactive viewer at [`docs/architecture/index.html`](docs/architecture/index.html).
 
 ---
 
