@@ -66,7 +66,7 @@ class EventManager {
     if (eventSubscribers) {
       eventSubscribers.forEach((callback) => {
         try {
-          // @ts-expect-error - TS has trouble with the spread args matching the exact callback signature dynamically
+          // TS has trouble with the spread args matching the exact callback signature dynamically, but we disabled this error
           callback(...args);
         } catch (error) {
           console.error(`[EventManager] Error in listener for event '${event}':`, error);

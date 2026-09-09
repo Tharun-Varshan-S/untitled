@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-// @ts-expect-error - TS doesn't have types for this plugin or something
+// TS doesn't have types for this plugin or something, but the error is disabled
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
