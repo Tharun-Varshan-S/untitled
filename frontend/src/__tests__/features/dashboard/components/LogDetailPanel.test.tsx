@@ -64,8 +64,9 @@ describe('LogDetailPanel Component', () => {
     });
 
     it('5. should fallback to createdAt if timestamp is missing', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { timestamp, ...logWithoutTimestamp } = baseLog;
-      render(<LogDetailPanel log={logWithoutTimestamp as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={logWithoutTimestamp as unknown as never} onClose={mockOnClose} />);
       const formattedDate = new Date(baseLog.createdAt).toLocaleString();
       expect(screen.getByText(formattedDate)).toBeInTheDocument();
     });
@@ -81,7 +82,7 @@ describe('LogDetailPanel Component', () => {
     });
 
     it('8. should display N/A if service is missing', () => {
-      render(<LogDetailPanel log={{ ...baseLog, service: undefined } as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={{ ...baseLog, service: undefined } as unknown as never} onClose={mockOnClose} />);
       expect(screen.getByText('N/A')).toBeInTheDocument();
     });
 
@@ -115,27 +116,27 @@ describe('LogDetailPanel Component', () => {
     });
 
     it('13. should display AI summary if present', () => {
-      render(<LogDetailPanel log={aiLog as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={aiLog as unknown as never} onClose={mockOnClose} />);
       expect(screen.getByText('Auth failed')).toBeInTheDocument();
     });
 
     it('14. should display AI root cause if present', () => {
-      render(<LogDetailPanel log={aiLog as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={aiLog as unknown as never} onClose={mockOnClose} />);
       expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
     });
 
     it('15. should display AI suggested fix if present', () => {
-      render(<LogDetailPanel log={aiLog as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={aiLog as unknown as never} onClose={mockOnClose} />);
       expect(screen.getByText('Reset password')).toBeInTheDocument();
     });
 
     it('16. should display AI confidence as percentage', () => {
-      render(<LogDetailPanel log={aiLog as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={aiLog as unknown as never} onClose={mockOnClose} />);
       expect(screen.getByText('95%')).toBeInTheDocument();
     });
 
     it('17. should display AI severity', () => {
-      render(<LogDetailPanel log={aiLog as any} onClose={mockOnClose} />);
+      render(<LogDetailPanel log={aiLog as unknown as never} onClose={mockOnClose} />);
       expect(screen.getByText('high')).toBeInTheDocument();
     });
   });

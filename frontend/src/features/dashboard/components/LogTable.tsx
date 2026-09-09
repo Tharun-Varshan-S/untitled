@@ -46,7 +46,7 @@ export const LogTable: React.FC<LogTableProps> = ({ projectId }) => {
     );
   }
 
-  const logs = (data as any)?.results || data?.logs || [];
+  const logs = data?.results || data?.logs || [];
   const validLogs = logs.filter(Boolean);
   const totalLogs = validLogs.length;
   const totalPages = Math.ceil(totalLogs / pageSize) || 1;
@@ -117,7 +117,7 @@ export const LogTable: React.FC<LogTableProps> = ({ projectId }) => {
                     }
 
                     return (
-                      <tr key={log?._id || log?.id || index} className={rowStyle} onClick={() => setSelectedLog(log as any)}>
+                      <tr key={log?._id || log?.id || index} className={rowStyle} onClick={() => setSelectedLog(log as unknown as LogEntry)}>
                         <td className="px-6 py-3 whitespace-nowrap text-[hsl(var(--text-secondary))] text-xs">
                           {log?.timestamp ? new Date(log.timestamp).toLocaleString() : 'Just now'}
                         </td>

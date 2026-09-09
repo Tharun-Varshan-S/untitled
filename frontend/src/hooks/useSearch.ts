@@ -4,7 +4,7 @@ import { SearchParams } from '../types/search.types';
 import { QUERY_KEYS } from '../lib/query-keys';
 
 export function useSearchLogs(params: SearchParams) {
-  const { projectId, q, level, service, environment, source, startDate, endDate, limit } = params;
+  const { projectId, q, level, service, environment, source, startDate, endDate } = params;
   
   return useInfiniteQuery({
     queryKey: QUERY_KEYS.search?.logs?.(projectId, { q, level, service, environment, source, startDate, endDate }) || ['search', projectId, { q, level, service, environment, source, startDate, endDate }],

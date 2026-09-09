@@ -9,6 +9,7 @@ export const searchApi = {
     // Clean up undefined or empty string params before sending
     const cleanedParams = Object.fromEntries(
       Object.entries(queryParams)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .filter(([_, v]) => v !== undefined && v !== null && v !== '')
         .map(([k, v]) => [k, String(v)])
     );

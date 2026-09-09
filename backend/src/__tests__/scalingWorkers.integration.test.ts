@@ -5,6 +5,11 @@ import { addDelayedAiAnalysisJob, addDelayedNotificationJob } from '../jobs/log.
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('Worker Scaling & Concurrency Integration Test', () => {
+  beforeAll(async () => {
+    // Clear out any lingering jobs from previous test files
+    await logQueue.obliterate({ force: true });
+  });
+
   afterAll(async () => {
     await logWorker.close();
     await logQueue.close();

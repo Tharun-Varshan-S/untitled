@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+
 
 /**
  * @deprecated Legacy project selector modal. Project selection is now handled via Sidebar workspace & project selectors.

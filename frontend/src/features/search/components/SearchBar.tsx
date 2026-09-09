@@ -15,10 +15,13 @@ export function SearchBar() {
   const debouncedQuery = useDebounce(localQuery, 500);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [prevStoreQuery, setPrevStoreQuery] = useState(storeQuery);
+
   // Sync external changes (e.g. from saved filter application) to local state
-  useEffect(() => {
+  if (storeQuery !== prevStoreQuery) {
+    setPrevStoreQuery(storeQuery);
     setLocalQuery(storeQuery);
-  }, [storeQuery]);
+  }
 
   // Sync debounced local state to store
   useEffect(() => {

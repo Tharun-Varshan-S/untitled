@@ -26,7 +26,7 @@ export const useLogStream = (projectId: string | undefined) => {
       }
 
       // Prepend new log dynamically into cache
-      queryClient.setQueryData(['logs', projectId], (oldData: any) => {
+      queryClient.setQueryData(['logs', projectId], (oldData: { results?: LogEntry[], logs?: LogEntry[] } | undefined) => {
         if (!oldData) {
           return {
             results: [newLog],
@@ -37,8 +37,8 @@ export const useLogStream = (projectId: string | undefined) => {
         }
 
         const currentList = oldData.results || oldData.logs || [];
-        const existingIds = new Set(currentList.filter(Boolean).map((l: any) => l?._id || l?.id));
-        const logId = newLog?.id || (newLog as any)?._id;
+        const existingIds = new Set(currentList.filter(Boolean).map((l: LogEntry) => l.id));
+        const logId = newLog.id;
 
         if (logId && existingIds.has(logId)) {
           return oldData;

@@ -7,6 +7,7 @@ type EventCallback<T extends EventNames> = ServerToClientEvents[T];
 class EventManager {
   // We keep track of how many subscribers we have for each event
   // to avoid calling socket.on() multiple times for the same event
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private subscribers: Map<EventNames, Set<EventCallback<any>>> = new Map();
 
   /**
@@ -22,8 +23,9 @@ class EventManager {
       
       // Register exactly one listener on the raw socket
       const socket = connectionService.getSocket();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       socket.on(event as any, (...args: any[]) => {
-        // @ts-ignore
+        // @ts-expect-error - TS cannot resolve dynamic event signatures here
         this.dispatch(event, ...args);
       });
     }
@@ -48,6 +50,7 @@ class EventManager {
       if (eventSubscribers.size === 0) {
         // No one is listening anymore, remove the raw socket listener
         const socket = connectionService.getSocket();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         socket.off(event as any);
         this.subscribers.delete(event);
       }
@@ -63,7 +66,7 @@ class EventManager {
     if (eventSubscribers) {
       eventSubscribers.forEach((callback) => {
         try {
-          // @ts-ignore - TS has trouble with the spread args matching the exact callback signature dynamically
+          // @ts-expect-error - TS has trouble with the spread args matching the exact callback signature dynamically
           callback(...args);
         } catch (error) {
           console.error(`[EventManager] Error in listener for event '${event}':`, error);

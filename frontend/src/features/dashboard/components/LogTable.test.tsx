@@ -25,7 +25,7 @@ describe('LogTable Component', () => {
       isLoading: true,
       error: null,
       data: null,
-    } as any);
+    } as unknown as never);
 
     render(<LogTable projectId={mockProjectId} />);
     expect(screen.getByText(/Loading log stream/i)).toBeDefined();
@@ -36,7 +36,7 @@ describe('LogTable Component', () => {
       isLoading: false,
       error: new Error('Failed to fetch'),
       data: null,
-    } as any);
+    } as unknown as never);
 
     render(<LogTable projectId={mockProjectId} />);
     expect(screen.getByText(/Failed to load logs/i)).toBeDefined();
@@ -47,7 +47,7 @@ describe('LogTable Component', () => {
       isLoading: false,
       error: null,
       data: { logs: [] },
-    } as any);
+    } as unknown as never);
 
     render(<LogTable projectId={mockProjectId} />);
     expect(screen.getByText(/No logs recorded yet/i)).toBeDefined();
@@ -64,7 +64,7 @@ describe('LogTable Component', () => {
       isLoading: false,
       error: null,
       data: { logs: mockLogs },
-    } as any);
+    } as unknown as never);
 
     render(<LogTable projectId={mockProjectId} />);
     

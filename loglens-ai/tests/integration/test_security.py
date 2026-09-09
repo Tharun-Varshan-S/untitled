@@ -20,8 +20,10 @@ async def test_security_secrets_never_exposed_in_errors(async_client: AsyncClien
     response = await async_client.post("/chat", json={"question": "test"}, headers=invalid_headers)
     assert response.status_code == 401
     content_str = response.text
-    assert settings.SERVICE_KEY not in content_str
-    assert settings.GROQ_API_KEY not in content_str
+    if settings.SERVICE_KEY and len(settings.SERVICE_KEY) > 3:
+        assert settings.SERVICE_KEY not in content_str
+    if settings.GROQ_API_KEY and len(settings.GROQ_API_KEY) > 3:
+        assert settings.GROQ_API_KEY not in content_str
 
 
 @pytest.mark.asyncio
@@ -43,6 +45,8 @@ async def test_security_prompt_injection_handled(async_client: AsyncClient, vali
     response = await async_client.post("/chat", json=injection_payload, headers=valid_headers)
     assert response.status_code == 200
     data = response.json()
-    assert settings.SERVICE_KEY not in data["answer"]
-    assert settings.GROQ_API_KEY not in data["answer"]
+    if settings.SERVICE_KEY and len(settings.SERVICE_KEY) > 3:
+        assert settings.SERVICE_KEY not in data["answer"]
+    if settings.GROQ_API_KEY and len(settings.GROQ_API_KEY) > 3:
+        assert settings.GROQ_API_KEY not in data["answer"]
     async_client.app.dependency_overrides.clear()

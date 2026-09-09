@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/lib/constants';
 import { useUIStore, useWorkspaceStore, useProjectStore } from '@/store';
 import { useWorkspaces, useWorkspaceProjects } from '@/hooks/useWorkspaces';
@@ -83,7 +83,6 @@ const navGroups: NavGroup[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
   const closeSidebar = useUIStore((state) => state.closeSidebar);
 

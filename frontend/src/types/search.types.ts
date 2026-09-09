@@ -7,7 +7,7 @@ export interface LogResponse {
   service: string;
   environment: string;
   source: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp: string;
   aiAnalysis?: {
     summary: string;

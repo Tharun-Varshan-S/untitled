@@ -14,7 +14,7 @@ export interface Workspace {
 export interface CreateWorkspaceResult {
   workspace: Workspace;
   defaultProject: ProjectResponse;
-  defaultApiKey: any;
+  defaultApiKey: unknown;
 }
 
 export const workspaceApi = {

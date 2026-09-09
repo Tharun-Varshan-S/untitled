@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import app from '../app';
 import { logQueue } from '../jobs/log.queue';
@@ -5,6 +6,11 @@ import { logWorker } from '../jobs/log.worker';
 import { getQueueMetrics } from '../jobs/log.monitoring';
 
 describe('Queue Monitoring Integration & API Tests', () => {
+  beforeAll(async () => {
+    // Clear out any lingering jobs from previous test files
+    await logQueue.obliterate({ force: true });
+  });
+
   afterAll(async () => {
     await logWorker.close();
     await logQueue.close();

@@ -77,6 +77,7 @@ export const LogLevelsChart = React.memo(({ data, isLoading }: LogLevelsChartPro
                 color: 'hsl(var(--text-primary))',
               }}
               itemStyle={{ color: 'hsl(var(--text-primary))' }}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(value: any) => [(Number(value) || 0).toLocaleString(), 'Count']}
             />
             <Legend 

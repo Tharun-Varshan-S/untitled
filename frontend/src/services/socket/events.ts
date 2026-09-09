@@ -12,7 +12,7 @@ class EventsService {
   public emit<T extends ClientEventNames>(event: T, ...args: Parameters<ClientEventCallback<T>>): void {
     const socket = connectionService.getSocket();
     if (socket.connected) {
-      // @ts-ignore - TS has trouble with spread args matching dynamically
+      // @ts-expect-error - TS has trouble with spread args matching dynamically
       socket.emit(event, ...args);
     } else {
       console.warn(`[EventsService] Attempted to emit '${event}' while socket is disconnected.`);

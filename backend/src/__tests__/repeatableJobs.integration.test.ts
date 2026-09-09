@@ -1,9 +1,15 @@
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { logQueue } from '../jobs/log.queue';
 import { initLogLensSchedulers, listActiveSchedulers, removeLogLensScheduler } from '../jobs/log.scheduler';
 import { SCHEDULER_IDS } from '../jobs/config/scheduler.config';
 import { logWorker } from '../jobs/log.worker';
 
 describe('Repeatable (Scheduled) Jobs Integration Test', () => {
+  beforeAll(async () => {
+    // Clear out any lingering jobs from previous test files
+    await logQueue.obliterate({ force: true });
+  });
+
   afterAll(async () => {
     await removeLogLensScheduler(SCHEDULER_IDS.COLLECTOR_HEALTH_CHECK);
     await removeLogLensScheduler(SCHEDULER_IDS.ANALYTICS_AGGREGATION);

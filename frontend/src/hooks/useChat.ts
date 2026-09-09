@@ -30,8 +30,8 @@ export const useChat = (projectId: string) => {
         });
         
         return response;
-      } catch (err: any) {
-        const message = err.message || 'An unexpected error occurred while communicating with AI Copilot.';
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'An unexpected error occurred while communicating with AI Copilot.';
         setError(message);
         return null;
       } finally {

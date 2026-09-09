@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { logQueue } from '../jobs/log.queue';
 import { addDelayedAiAnalysisJob, addDelayedNotificationJob } from '../jobs/log.producer';
 import { logWorker } from '../jobs/log.worker';
@@ -5,6 +6,12 @@ import { logWorker } from '../jobs/log.worker';
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('Delayed Jobs Integration Test', () => {
+  beforeAll(async () => {
+    // Clear out any lingering jobs from previous test files
+    // to prevent worker from processing them without DB connection
+    await logQueue.obliterate({ force: true });
+  });
+
   afterAll(async () => {
     await logWorker.close();
     await logQueue.close();
