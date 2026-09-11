@@ -29,9 +29,7 @@ afterAll(async () => {
   const { disconnectDB } = require('../config/database');
   await disconnectDB();
   if (mongod) await mongod.stop();
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { logQueue } = require('../jobs/log.queue');
-  await logQueue.close();
+  // logQueue is a module-level singleton; forceExit:true handles cleanup.
 });
 
 test('create project, create api key, authenticate with key', async () => {

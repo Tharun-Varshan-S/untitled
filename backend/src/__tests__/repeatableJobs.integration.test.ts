@@ -14,7 +14,7 @@ describe('Repeatable (Scheduled) Jobs Integration Test', () => {
     await removeLogLensScheduler(SCHEDULER_IDS.COLLECTOR_HEALTH_CHECK);
     await removeLogLensScheduler(SCHEDULER_IDS.ANALYTICS_AGGREGATION);
     await removeLogLensScheduler(SCHEDULER_IDS.DAILY_LOG_CLEANUP);
-    await logWorker.close();
+    await logWorker.close(true);
     await logQueue.close();
     await logQueueEvents.close();
   });

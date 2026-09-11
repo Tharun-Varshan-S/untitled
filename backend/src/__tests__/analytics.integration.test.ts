@@ -51,9 +51,9 @@ afterAll(async () => {
   const { disconnectDB } = require('../config/database');
   await disconnectDB();
   if (mongod) await mongod.stop();
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { logQueue } = require('../jobs/log.queue');
-  await logQueue.close();
+  // logQueue is a module-level singleton shared with worker integration tests.
+  // Closing it here would poison it for subsequent test files in --runInBand.
+  // forceExit:true in jest.config.cjs handles cleanup at process exit.
 });
 
 // ─── helpers ─────────────────────────────────────────────────────────────────

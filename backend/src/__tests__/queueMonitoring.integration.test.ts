@@ -12,7 +12,7 @@ describe('Queue Monitoring Integration & API Tests', () => {
   });
 
   afterAll(async () => {
-    await logWorker.close();
+    await logWorker.close(true);
     await logQueue.close();
     await logQueueEvents.close();
   });

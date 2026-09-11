@@ -13,7 +13,7 @@ describe('Delayed Jobs Integration Test', () => {
   });
 
   afterAll(async () => {
-    await logWorker.close();
+    await logWorker.close(true);
     await logQueue.close();
     await logQueueEvents.close();
   });

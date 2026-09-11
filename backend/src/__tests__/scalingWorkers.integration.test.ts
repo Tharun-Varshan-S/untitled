@@ -12,7 +12,7 @@ describe('Worker Scaling & Concurrency Integration Test', () => {
   });
 
   afterAll(async () => {
-    await logWorker.close();
+    await logWorker.close(true);
     await logQueue.close();
     await logQueueEvents.close();
   });
@@ -50,7 +50,7 @@ describe('Worker Scaling & Concurrency Integration Test', () => {
 
     expect(processedJobIds.size).toBeGreaterThanOrEqual(10);
 
-    await worker1.close();
-    await worker2.close();
+    await worker1.close(true);
+    await worker2.close(true);
   });
 });
