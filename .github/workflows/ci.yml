@@ -57,6 +57,7 @@ jobs:
       JWT_SECRET: ci-dummy-jwt-secret
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
+      MONGODB_URI: mongodb://localhost:27017/ci-dummy
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,6 +99,7 @@ jobs:
       JWT_SECRET: ci-dummy-jwt-secret
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
+      MONGODB_URI: mongodb://localhost:27017/ci-dummy
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
