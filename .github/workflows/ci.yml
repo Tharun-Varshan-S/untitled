@@ -191,10 +191,10 @@ jobs:
           username: ${{ secrets.PROD_USERNAME }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            # Navigate to project directory (provided via GitHub Secrets)
-            if [ -z "${{ secrets.PROD_PROJECT_PATH }}" ]; then
-              echo "Error: PROD_PROJECT_PATH secret is not set."
+            if [ -z "${{ vars.PROD_PROJECT_PATH }}" ]; then
+              echo "Error: PROD_PROJECT_PATH variable is not set."
               exit 1
             fi
-            cd ${{ secrets.PROD_PROJECT_PATH }}
-            bash ./scripts/deploy.sh ${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}
+            
+            cd ${{ vars.PROD_PROJECT_PATH }}
+            bash ./scripts/deploy.sh ${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }} ${{ secrets.DOCKERHUB_TOKEN }}

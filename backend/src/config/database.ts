@@ -10,7 +10,6 @@ const connectOptions: mongoose.ConnectOptions = {
   serverSelectionTimeoutMS: 5000,
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  family: 4,
 };
 
 const delay = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));

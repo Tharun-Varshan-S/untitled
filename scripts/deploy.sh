@@ -1,15 +1,19 @@
 #!/bin/bash
 set -e
 
-# Usage: ./scripts/deploy.sh <NEW_IMAGE_TAG> <DOCKERHUB_USERNAME>
+# Usage: ./scripts/deploy.sh <NEW_IMAGE_TAG> <DOCKERHUB_USERNAME> <DOCKERHUB_TOKEN>
 
 NEW_IMAGE_TAG=$1
 DOCKERHUB_USERNAME=$2
+DOCKERHUB_TOKEN=$3
 
-if [ -z "$NEW_IMAGE_TAG" ] || [ -z "$DOCKERHUB_USERNAME" ]; then
-    echo "Usage: $0 <NEW_IMAGE_TAG> <DOCKERHUB_USERNAME>"
+if [ -z "$NEW_IMAGE_TAG" ] || [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+    echo "Usage: $0 <NEW_IMAGE_TAG> <DOCKERHUB_USERNAME> <DOCKERHUB_TOKEN>"
     exit 1
 fi
+
+echo "Authenticating with Docker Hub..."
+echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
 echo "Starting deployment for tag: $NEW_IMAGE_TAG"
 
@@ -35,10 +39,28 @@ echo "IMAGE_TAG=$NEW_IMAGE_TAG" >> .env
 echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" >> .env
 
 echo "Pulling new images..."
+set +e
 docker-compose pull backend worker ai-service frontend
+PULL_STATUS=$?
+if [ $PULL_STATUS -ne 0 ]; then
+    echo "⚠️ Failed to pull images. Initiating rollback to $PREV_IMAGE_TAG..."
+    sed -i '/^IMAGE_TAG=/d' .env
+    echo "IMAGE_TAG=$PREV_IMAGE_TAG" >> .env
+    exit 1
+fi
 
 echo "Deploying new containers..."
 docker-compose up -d
+UP_STATUS=$?
+
+if [ $UP_STATUS -ne 0 ]; then
+    echo "⚠️ docker-compose up failed. Initiating rollback to $PREV_IMAGE_TAG..."
+    sed -i '/^IMAGE_TAG=/d' .env
+    echo "IMAGE_TAG=$PREV_IMAGE_TAG" >> .env
+    docker-compose up -d
+    echo "Rollback completed. Marking deployment as failed."
+    exit 1
+fi
 
 echo "Waiting for services to start..."
 sleep 20
@@ -66,6 +88,14 @@ echo "Checking Frontend Health..."
 # Frontend is mapped to 3000
 if ! curl -s http://localhost:3000 > /dev/null; then
     echo "❌ Frontend health check failed!"
+    HEALTHY=false
+fi
+
+echo "Checking Worker Health..."
+# Worker does not have an HTTP endpoint; verify its container state is stable (running, not restarting or exited)
+WORKER_STATUS=$(docker inspect --format='{{.State.Status}}' loglens-node-worker 2>/dev/null || echo 'unknown')
+if [ "$WORKER_STATUS" != "running" ]; then
+    echo "❌ Worker health check failed! Status is: $WORKER_STATUS"
     HEALTHY=false
 fi
 

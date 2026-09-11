@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
-const URI = "mongodb+srv://tharunvarshans087_db_user:7mXUjJrJjb0NXr03@cluster0.gq61gyv.mongodb.net/?appName=Cluster0";
+const URI = process.env.MONGODB_URI || "mongodb://localhost:27017/loglens";
 const rawKey = 'll_live_test_apikey_12345';
 const hashedKey = crypto.createHash('sha256').update(rawKey).digest('hex');
 

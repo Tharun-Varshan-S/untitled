@@ -27,7 +27,7 @@ export const config = {
   isDevelopment: nodeEnv === 'development',
   jwtSecret: jwtSecret || 'change_me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
-  mongoUri,
+  get mongoUri() { return process.env.MONGODB_URI?.trim() ?? ''; },
   redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
   aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://loglens-ai-service:8000/api/v1',
   serviceKey: process.env.SERVICE_KEY ?? 'loglens-internal-secret-key',
