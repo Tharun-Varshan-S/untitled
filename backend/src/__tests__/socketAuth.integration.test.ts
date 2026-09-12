@@ -3,9 +3,6 @@ import { Server } from 'socket.io';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
 import http from 'http';
 
-import { MongoMemoryServer } from 'mongodb-memory-server';
-
-let mongod: MongoMemoryServer;
 
 describe('Socket.IO Authentication', () => {
   let io: Server;
@@ -20,8 +17,6 @@ describe('Socket.IO Authentication', () => {
   let User: any;
 
   beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    process.env.MONGODB_URI = mongod.getUri();
     process.env.NODE_ENV = 'test';
     
     // Defer imports to avoid early config evaluation
@@ -46,9 +41,6 @@ describe('Socket.IO Authentication', () => {
     await User.deleteMany({ email: 'socketest@example.com' });
     const { disconnectDB } = require('../config/database');
     await disconnectDB();
-    if (mongod) {
-      await mongod.stop();
-    }
   });
 
   beforeEach((done) => {

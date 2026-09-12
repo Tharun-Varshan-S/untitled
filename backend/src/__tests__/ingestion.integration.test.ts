@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-
-let mongod: MongoMemoryServer;
 let app: any;
 let rawKey: string;
 let projectId: string;
@@ -25,8 +22,6 @@ const validBatch = () => [
 // ─── lifecycle ───────────────────────────────────────────────────────────────
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
   process.env.NODE_ENV = 'test';
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -68,7 +63,6 @@ afterAll(async () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { disconnectDB } = require('../config/database');
   await disconnectDB();
-  if (mongod) await mongod.stop();
   // logQueue is a module-level singleton; forceExit:true handles cleanup.
 });
 

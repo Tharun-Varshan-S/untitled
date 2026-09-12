@@ -1,16 +1,10 @@
 import { describe, test, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-
-let mongod: MongoMemoryServer;
 let app: any;
 let connectDB: any;
 let disconnectDB: any;
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
-  process.env.MONGODB_URI = uri;
   process.env.NODE_ENV = 'test';
 
   // require after setting env (avoid dynamic ESM import in Jest environment)
@@ -28,7 +22,6 @@ afterAll(async () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { disconnectDB } = require('../config/database');
   await disconnectDB();
-  if (mongod) await mongod.stop();
   // logQueue is a module-level singleton; forceExit:true handles cleanup.
 });
 

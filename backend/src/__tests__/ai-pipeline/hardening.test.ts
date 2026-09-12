@@ -4,7 +4,6 @@ import { ingestionRateLimiter, analyticsRateLimiter } from '../../middleware/rat
 import { describe, test, it, expect, beforeAll, afterAll, beforeEach, afterEach, jest } from '@jest/globals';
 import express from 'express';
 import request from 'supertest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 describe('Hardening and Security Controls', () => {
 

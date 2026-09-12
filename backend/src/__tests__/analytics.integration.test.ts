@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-
-let mongod: MongoMemoryServer;
 let app: any;
 let token: string;
 let projectId: string;
@@ -11,8 +8,6 @@ let otherToken: string; // belongs to a different user (wrong owner)
 // ─── lifecycle ───────────────────────────────────────────────────────────────
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongod.getUri();
   process.env.NODE_ENV = 'test';
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -50,7 +45,6 @@ afterAll(async () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { disconnectDB } = require('../config/database');
   await disconnectDB();
-  if (mongod) await mongod.stop();
   // logQueue is a module-level singleton shared with worker integration tests.
   // Closing it here would poison it for subsequent test files in --runInBand.
   // forceExit:true in jest.config.cjs handles cleanup at process exit.
