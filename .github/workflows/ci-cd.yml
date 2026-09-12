@@ -59,7 +59,7 @@ jobs:
       SERVICE_KEY: ci-dummy-service-key
       MONGODB_URI: mongodb://localhost:27017/ci-dummy
       # Make mongodb-memory-server store binaries in a cacheable, predictable location
-      MONGOMS_PREFER_GLOBAL_PATH: 1
+      MONGOMS_DOWNLOAD_DIR: /home/runner/.cache/mongodb-binaries
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,7 +107,7 @@ jobs:
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
       MONGODB_URI: mongodb://localhost:27017/ci-dummy
-      MONGOMS_PREFER_GLOBAL_PATH: 1
+      MONGOMS_DOWNLOAD_DIR: /home/runner/.cache/mongodb-binaries
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

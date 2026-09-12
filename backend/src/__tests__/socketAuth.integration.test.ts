@@ -66,8 +66,8 @@ describe('Socket.IO Authentication', () => {
     if (clientSocket && clientSocket.connected) {
       clientSocket.disconnect();
     }
-    io.close();
-    httpServer.close();
+    if (io) io.close();
+    if (httpServer) httpServer.close();
   });
 
   it('should successfully connect with a valid JWT', (done) => {
