@@ -61,12 +61,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      REDIS_URL: redis://localhost:6379
+      REDIS_URL: redis://127.0.0.1:6379
       NODE_ENV: test
       JWT_SECRET: ci-dummy-jwt-secret
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
-      MONGODB_URI: mongodb://localhost:27017/ci-dummy
+      MONGODB_URI: mongodb://127.0.0.1:27017/ci-dummy
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -113,12 +113,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      REDIS_URL: redis://localhost:6379
+      REDIS_URL: redis://127.0.0.1:6379
       NODE_ENV: test
       JWT_SECRET: ci-dummy-jwt-secret
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
-      MONGODB_URI: mongodb://localhost:27017/ci-dummy
+      MONGODB_URI: mongodb://127.0.0.1:27017/ci-dummy
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
