@@ -1,15 +1,23 @@
 import mongoose from 'mongoose';
+import os from 'os';
 import { config } from './env';
 import { logger } from '../utils/logger';
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 2000;
 
+// Provide the os module explicitly via runtimeAdapters to work around a
+// mongodb@7.x driver issue where makeClientMetadata() uses dynamic import('os'),
+// which fails in Jest + ts-jest CommonJS environments on GitHub Actions CI.
+// Without this, the handshake omits the 'driver' sub-document and the server
+// rejects the connection with "Missing required sub-document 'driver'".
 const connectOptions: mongoose.ConnectOptions = {
   autoIndex: false,
   serverSelectionTimeoutMS: 5000,
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  runtimeAdapters: { os } as any,
 };
 
 const delay = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
