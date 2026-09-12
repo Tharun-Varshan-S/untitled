@@ -8,7 +8,9 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 describe('Worker Scaling & Concurrency Integration Test', () => {
   beforeAll(async () => {
     // Clear out any lingering jobs from previous test files
+    await logWorker.pause();
     await logQueue.obliterate({ force: true });
+    await logWorker.resume();
   });
 
   afterAll(async () => {

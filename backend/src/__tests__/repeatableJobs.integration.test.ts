@@ -7,7 +7,9 @@ import { logWorker, logQueueEvents } from '../jobs/log.worker';
 describe('Repeatable (Scheduled) Jobs Integration Test', () => {
   beforeAll(async () => {
     // Clear out any lingering jobs from previous test files
+    await logWorker.pause();
     await logQueue.obliterate({ force: true });
+    await logWorker.resume();
   });
 
   afterAll(async () => {

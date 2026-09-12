@@ -9,7 +9,9 @@ describe('Delayed Jobs Integration Test', () => {
   beforeAll(async () => {
     // Clear out any lingering jobs from previous test files
     // to prevent worker from processing them without DB connection
+    await logWorker.pause();
     await logQueue.obliterate({ force: true });
+    await logWorker.resume();
   });
 
   afterAll(async () => {
