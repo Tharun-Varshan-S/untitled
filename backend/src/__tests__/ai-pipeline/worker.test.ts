@@ -80,6 +80,11 @@ describe('Worker processing logic', () => {
       _id: new Types.ObjectId(),
       level: 'error',
       message: 'Test message',
+      timestamp: new Date(),
+      service: 'test-service',
+      metadata: {},
+      workspaceId: new Types.ObjectId(),
+      save: jest.fn().mockResolvedValue(true),
     });
 
     (logsRepo.createLog as jest.Mock).mockResolvedValue({
@@ -205,26 +210,26 @@ describe('Worker processing logic', () => {
       await expect(processLogJob(mockJob)).rejects.toThrow(UnrecoverableError);
     });
 
-    it('16. should call aiService.generateCompletion', async () => {
-      (aiService.generateCompletion as jest.Mock).mockResolvedValue(JSON.stringify({ 
+    it('16. should call aiService.analyzeLog', async () => {
+      (aiService.analyzeLog as jest.Mock).mockResolvedValue(JSON.stringify({ 
         summary: 'test', severity: 'error', rootCause: 'rc', suggestedFix: 'fix', confidence: 0.9 
       }));
       await processLogJob(mockJob);
-      expect(aiService.generateCompletion).toHaveBeenCalled();
+      expect(aiService.analyzeLog).toHaveBeenCalled();
     });
 
     it('17. should throw normal Error if AI generation fails (allowing BullMQ to retry)', async () => {
-      (aiService.generateCompletion as jest.Mock).mockRejectedValue(new Error('Groq Timeout'));
+      (aiService.analyzeLog as jest.Mock).mockRejectedValue(new Error('Groq Timeout'));
       await expect(processLogJob(mockJob)).rejects.toThrow('Groq Timeout');
     });
 
     it('18. should throw normal Error if AI output validation fails', async () => {
-      (aiService.generateCompletion as jest.Mock).mockResolvedValue('invalid json');
+      (aiService.analyzeLog as jest.Mock).mockResolvedValue('invalid json');
       await expect(processLogJob(mockJob)).rejects.toThrow();
     });
 
     it('19. should call analysisStorageService.saveAnalysis on success', async () => {
-      (aiService.generateCompletion as jest.Mock).mockResolvedValue(JSON.stringify({
+      (aiService.analyzeLog as jest.Mock).mockResolvedValue(JSON.stringify({
         summary: 'sum',
         severity: 'warn',
         rootCause: 'rc',
@@ -236,7 +241,7 @@ describe('Worker processing logic', () => {
     });
 
     it('20. should broadcast analytics update on completion', async () => {
-      (aiService.generateCompletion as jest.Mock).mockResolvedValue(JSON.stringify({
+      (aiService.analyzeLog as jest.Mock).mockResolvedValue(JSON.stringify({
         summary: 'sum', severity: 'error', rootCause: 'rc', suggestedFix: 'fix', confidence: 0.9
       }));
       await processLogJob(mockJob);
@@ -244,7 +249,7 @@ describe('Worker processing logic', () => {
     });
 
     it('21. should return a success object with analyzedAt timestamp', async () => {
-      (aiService.generateCompletion as jest.Mock).mockResolvedValue(JSON.stringify({
+      (aiService.analyzeLog as jest.Mock).mockResolvedValue(JSON.stringify({
         summary: 'sum', severity: 'info', rootCause: 'rc', suggestedFix: 'fix', confidence: 0.9
       }));
       const res = await processLogJob(mockJob);
