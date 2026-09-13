@@ -40,7 +40,7 @@ echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" >> .env
 
 echo "Pulling new images..."
 set +e
-docker-compose pull backend worker ai-service frontend
+docker compose pull backend worker ai-service frontend
 PULL_STATUS=$?
 if [ $PULL_STATUS -ne 0 ]; then
     echo "⚠️ Failed to pull images. Initiating rollback to $PREV_IMAGE_TAG..."
@@ -50,14 +50,14 @@ if [ $PULL_STATUS -ne 0 ]; then
 fi
 
 echo "Deploying new containers..."
-docker-compose up -d
+docker compose up -d
 UP_STATUS=$?
 
 if [ $UP_STATUS -ne 0 ]; then
     echo "⚠️ docker-compose up failed. Initiating rollback to $PREV_IMAGE_TAG..."
     sed -i '/^IMAGE_TAG=/d' .env
     echo "IMAGE_TAG=$PREV_IMAGE_TAG" >> .env
-    docker-compose up -d
+    docker compose up -d
     echo "Rollback completed. Marking deployment as failed."
     exit 1
 fi
@@ -109,7 +109,7 @@ else
     sed -i '/^IMAGE_TAG=/d' .env
     echo "IMAGE_TAG=$PREV_IMAGE_TAG" >> .env
     
-    docker-compose up -d
+    docker compose up -d
     
     echo "Rollback completed. Marking deployment as failed."
     exit 1
