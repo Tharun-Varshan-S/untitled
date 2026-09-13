@@ -144,15 +144,15 @@ const handleAnalyzeLogJob = async (job: Job<any>, workerId?: string) => {
 
   await job.updateProgress(30);
 
-  // 2. Build Prompt
-  const messages = buildLogAnalysisPrompt(logDoc);
+  // 2. Format Log for AI Service
+  const logString = `[${logDoc.timestamp.toISOString()}] ${logDoc.level.toUpperCase()} [${logDoc.service}] ${logDoc.message} | Metadata: ${JSON.stringify(logDoc.metadata || {})}`;
 
   await job.updateProgress(50);
 
   // 3. Call AI Service (Rate limited by BullMQ concurrency / maxRetries)
   let rawResponse: string;
   try {
-    rawResponse = await aiService.generateCompletion(messages, { type: 'json_object' });
+    rawResponse = await aiService.analyzeLog(logDoc.workspaceId?.toString() || 'default-workspace', projectId, logString);
   } catch (error: any) {
     logger.error(`[Worker ${workerId || 'Default'}] AI call failed for log ${logId}: ${error.message}`);
     // Throw error to let BullMQ retry it with backoff

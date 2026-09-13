@@ -1,39 +1,35 @@
-import Groq from 'groq-sdk';
-import { groqConfig } from '../config/groq';
+import axios from 'axios';
+import { config } from '../config/env';
 
 /**
- * Singleton Groq client instance.
- * Reusing a single client is more efficient than instantiating per-call.
- */
-export const aiClient = new Groq({
-  apiKey: groqConfig.apiKey,
-  maxRetries: groqConfig.maxRetries,
-  timeout: groqConfig.timeoutMs,
-});
-
-/**
- * AI Service encapsulating calls to the Groq API.
- * Keeps external dependencies isolated from business logic.
+ * AI Service encapsulating calls to the internal loglens-ai FastAPI service.
+ * Keeps external dependencies and AI providers isolated within the Python microservice.
  */
 export const aiService = {
   /**
-   * Generates a completion from the Groq model.
-   * @param messages The array of chat messages to send to the model.
-   * @param responseFormat Optional format (e.g., json_object)
-   * @returns The text response from the model
+   * Generates a completion from the loglens-ai service.
+   * We use the /chat endpoint since it accepts a question and logs, 
+   * but for worker analysis, we use /analyze.
    */
-  async generateCompletion(
-    messages: any[],
-    responseFormat: { type: 'text' | 'json_object' } = { type: 'json_object' }
-  ): Promise<string> {
-    const response = await aiClient.chat.completions.create({
-      model: groqConfig.model,
-      messages: messages,
-      response_format: responseFormat,
-      temperature: 0.1, // Low temperature for more deterministic/structured responses
-    });
+  async analyzeLog(workspaceId: string, projectId: string, logString: string): Promise<string> {
+    const response = await axios.post(
+      `${config.aiServiceUrl}/analyze`,
+      {
+        workspaceId,
+        projectId,
+        logs: [logString],
+      },
+      {
+        headers: {
+          'X-Service-Key': config.serviceKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000, // 30s timeout
+      }
+    );
 
-    // Ensure we return the generated text content
-    return response.choices[0]?.message?.content || '{}';
+    // The FastAPI /analyze endpoint returns a structured JSON (success, summary, rootCause, etc.)
+    // We return it as a JSON string so validateAiResponse can parse it without changing the worker logic heavily.
+    return JSON.stringify(response.data);
   },
 };
