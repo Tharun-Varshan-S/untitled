@@ -30,8 +30,9 @@ const parsePagination = (query: unknown): { page: number; limit: number; level?:
 
 export const ingestLogController = async (req: Request, res: Response) => {
   const projectId = getProjectIdFromRequest(req);
+  const requestId = (req as any).requestId as string | undefined;
   const payload = validateLogPayload(req.body);
-  const result = await ingestLog(projectId, payload);
+  const result = await ingestLog(projectId, payload, requestId);
 
   // Return HTTP 202 Accepted for asynchronous queue processing
   res.status(202).json({ success: true, message: 'Log enqueued for asynchronous processing', data: result });
@@ -39,12 +40,14 @@ export const ingestLogController = async (req: Request, res: Response) => {
 
 export const bulkIngestLogsController = async (req: Request, res: Response) => {
   const projectId = getProjectIdFromRequest(req);
+  const requestId = (req as any).requestId as string | undefined;
   const payload = validateBulkLogPayload(req.body);
-  const result = await bulkIngestLogs(projectId, payload);
+  const result = await bulkIngestLogs(projectId, payload, requestId);
 
   // Return HTTP 202 Accepted for asynchronous batch processing
   res.status(202).json({ success: true, message: 'Log batch enqueued for asynchronous processing', data: result });
 };
+
 
 export const listLogsController = async (req: Request, res: Response) => {
   const projectId = getProjectIdFromRequest(req);

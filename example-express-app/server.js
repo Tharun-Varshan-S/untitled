@@ -18,8 +18,8 @@ const PORT = process.env.PORT || 4000;
 
 // Initialize LogLens SDK
 loglens.init({
-  apiKey: process.env.LOGLENS_API_KEY || 'll_live_00pi24dkGecQU31aA83PzhaqY1lKQaG0jdCA5pzeBqc', // Replace with your key
-  endpoint: process.env.LOGLENS_ENDPOINT || 'http://localhost:5000',
+  apiKey: process.env.LOGLENS_API_KEY || '', // Replace with your actual API key
+  endpoint: process.env.LOGLENS_ENDPOINT || 'http://localhost:4000/api/v1',
   service: 'Inventory API Service',
   debug: true, // Output SDK debugging logs to console
 });

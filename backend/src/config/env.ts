@@ -8,6 +8,7 @@ type NodeEnv = 'development' | 'production' | 'test';
 const nodeEnv = (process.env.NODE_ENV ?? 'development') as NodeEnv;
 const mongoUri = process.env.MONGODB_URI?.trim() ?? '';
 const jwtSecret = process.env.JWT_SECRET?.trim() ?? '';
+const serviceKey = process.env.SERVICE_KEY?.trim() ?? '';
 
 if (!mongoUri) {
   throw new Error('MONGODB_URI environment variable is required');
@@ -15,6 +16,10 @@ if (!mongoUri) {
 
 if (nodeEnv === 'production' && !jwtSecret) {
   throw new Error('JWT_SECRET environment variable is required in production');
+}
+
+if (nodeEnv === 'production' && !serviceKey) {
+  throw new Error('SERVICE_KEY environment variable is required in production');
 }
 
 const maxUploadSizeMb = Number(process.env.MAX_UPLOAD_SIZE_MB ?? 10);
@@ -30,7 +35,10 @@ export const config = {
   get mongoUri() { return process.env.MONGODB_URI?.trim() ?? ''; },
   redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
   aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://loglens-ai-service:8000/api/v1',
-  serviceKey: process.env.SERVICE_KEY ?? 'loglens-internal-secret-key',
+  // SERVICE_KEY has no default fallback — must be set explicitly in all environments
+  serviceKey: serviceKey,
+  bullBoardUser: process.env.BULL_BOARD_USER ?? 'admin',
+  bullBoardPass: process.env.BULL_BOARD_PASS ?? '',
   upload: {
     maxSizeMb: maxUploadSizeMb,
     maxSizeBytes: maxUploadSizeMb * 1024 * 1024,

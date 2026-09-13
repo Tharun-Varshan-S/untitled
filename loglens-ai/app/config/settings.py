@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # Service Security
     SERVICE_KEY: str = Field(
-        default="loglens-internal-secret-key",
+        ...,
         description="Internal secret key required in X-Service-Key header."
     )
 

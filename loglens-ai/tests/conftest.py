@@ -11,6 +11,14 @@ Responsibility:
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
+import os
+import secrets
+
+# Use a randomly generated key per test session — never a hardcoded known value.
+# This ensures tests don't inadvertently rely on a production secret default.
+os.environ.setdefault("SERVICE_KEY", secrets.token_hex(32))
+os.environ.setdefault("GROQ_API_KEY", "test_key_not_real")
+
 from httpx import AsyncClient, ASGITransport
 
 from app.main import create_app

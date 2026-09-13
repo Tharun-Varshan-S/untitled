@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import LogModel, { LogDocument, LogLevel } from '../models/Log';
 
-export const createLog = async (payload: {
+type CreateLogPayload = {
   workspaceId?: Types.ObjectId | undefined;
   projectId: Types.ObjectId;
   level: LogLevel;
@@ -9,9 +9,24 @@ export const createLog = async (payload: {
   service: string;
   timestamp: Date;
   metadata?: Record<string, unknown> | undefined;
-}): Promise<LogDocument> => {
+  /** BullMQ Job ID for idempotency. When set, uses upsert to prevent duplicate docs on retry. */
+  ingestJobId?: string;
+};
+
+export const createLog = async (payload: CreateLogPayload): Promise<LogDocument> => {
+  if (payload.ingestJobId) {
+    // Idempotent path: if the same BullMQ job is retried, don't create a second document.
+    const { ingestJobId, ...rest } = payload;
+    const doc = await LogModel.findOneAndUpdate(
+      { ingestJobId },
+      { $setOnInsert: { ...rest, ingestJobId } },
+      { upsert: true, new: true }
+    );
+    return doc as LogDocument;
+  }
   return LogModel.create(payload as any);
 };
+
 
 export const insertLogs = async (documents: Array<{
   workspaceId?: Types.ObjectId | undefined;

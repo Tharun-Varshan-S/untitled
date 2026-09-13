@@ -43,14 +43,15 @@ const parseRedisConnection = () => {
 };
 
 /**
- * Handle standard log processing jobs (Immediate)
+ * Handle standard log processing jobs (Immediate Execution)
  */
 const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) => {
+  const requestId = job.data.requestId ?? 'no-request-id';
   await job.updateProgress(25);
   const validation = validateLogJobPayload(job.data);
   if (!validation.isValid || !validation.data) {
     const errorMsg = `Non-recoverable validation failure for #${job.id}: ${validation.errors?.join('; ')}`;
-    logger.error(`[Worker ${workerId || 'Default'}] ${errorMsg}`);
+    logger.error(`[Worker ${workerId || 'Default'}] [req:${requestId}] ${errorMsg}`);
     throw new UnrecoverableError(errorMsg);
   }
 
@@ -71,10 +72,12 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
     const existingLog = await LogModel.findOne({ logHash, 'aiAnalysis.summary': { $exists: true } }).lean();
     if (existingLog && existingLog.aiAnalysis) {
       existingAnalysis = existingLog.aiAnalysis;
-      logger.debug(`[Worker ${workerId || 'Default'}] Cache hit for log hash ${logHash}. Copying prior AI analysis.`);
+      logger.debug(`[Worker ${workerId || 'Default'}] [req:${requestId}] Cache hit for log hash ${logHash}. Copying prior AI analysis.`);
     }
   }
 
+  // Idempotent write: job.id guarantees this document is created at most once,
+  // even if BullMQ retries the job after a transient failure.
   const created = await logsRepo.createLog({
     workspaceId: projectDoc?.workspaceId as Types.ObjectId | undefined,
     projectId: projectObjectId,
@@ -83,6 +86,7 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
     service: payload.service ?? 'default',
     metadata: job.data.metadata ?? undefined,
     timestamp: job.data.timestamp ? new Date(job.data.timestamp) : new Date(),
+    ...(job.id ? { ingestJobId: job.id } : {}),
   });
 
   // Assign hash and potentially existing analysis
@@ -91,6 +95,8 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
     created.aiAnalysis = existingAnalysis;
   }
   await created.save();
+
+  logger.info(`[Worker ${workerId || 'Default'}] [req:${requestId}] Log ${created._id} persisted for project ${payload.projectId}`);
 
   // If the log is analysis-worthy and we didn't just copy a cached analysis, enqueue it for AI analysis
   if (isAnalysisWorthy(payload.level, payload.message) && !existingAnalysis) {
@@ -124,8 +130,10 @@ const handleSingleLogJob = async (job: Job<LogJobPayloadV1>, workerId?: string) 
     jobId: job.id,
     logId: formattedLog.id,
     projectId: job.data.projectId,
+    requestId,
   };
 };
+
 
 /**
  * Handle Dedicated AI Root-Cause Analysis for a specific log (Prompts 3, 4, 5, 10)

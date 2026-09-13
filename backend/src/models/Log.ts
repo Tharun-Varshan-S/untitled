@@ -15,6 +15,8 @@ export interface LogDocument extends Document {
   
   // Deduplication hash for AI analysis
   logHash?: string;
+  /** BullMQ Job ID — used for idempotent writes (prevents duplicate docs on job retry) */
+  ingestJobId?: string;
   // Subdocument storing the AI root-cause analysis
   aiAnalysis?: {
     summary: string;
@@ -65,8 +67,15 @@ const logSchema = new Schema<LogDocument>(
     },
     logHash: {
       type: String,
-      index: true, // For fast duplicate lookups
+      index: true,
     },
+    ingestJobId: {
+      type: String,
+      index: true,
+      sparse: true,  // Sparse so null/undefined values don't conflict on unique constraint
+      unique: true,
+    },
+
     aiAnalysis: {
       type: {
         summary: String,

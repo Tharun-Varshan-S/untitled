@@ -1,4 +1,4 @@
-import express, { Express } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -36,8 +36,30 @@ app.use(cors({
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '50kb' }));
 
-// Mount Bull Board Dashboard UI at /admin/queues
-app.use('/admin/queues', serverAdapter.getRouter());
+// Bull Board Admin UI — protected by HTTP Basic Auth in non-dev environments
+const bullBoardAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (config.isDevelopment) return next();
+
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Basic ')) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="LogLens Admin"');
+    return res.status(401).send('Unauthorized: Bull Board requires admin credentials.');
+  }
+
+  const [user, pass] = Buffer.from(auth.slice(6), 'base64').toString().split(':');
+  const expectedUser = config.bullBoardUser;
+  const expectedPass = config.bullBoardPass;
+
+  if (!expectedPass || user !== expectedUser || pass !== expectedPass) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="LogLens Admin"');
+    return res.status(401).send('Unauthorized: Invalid credentials.');
+  }
+
+  return next();
+};
+
+app.use('/admin/queues', bullBoardAuth, serverAdapter.getRouter());
+
 
 registerRoutes(app);
 app.use(errorMiddleware);

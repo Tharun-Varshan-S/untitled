@@ -14,6 +14,8 @@ export interface LogJobPayloadV1 {
   metadata?: Record<string, unknown>;
   timestamp?: string;
   simulateFailure?: boolean;
+  /** Correlation ID from the originating HTTP request (X-Request-ID) */
+  requestId?: string;
 }
 
 /**

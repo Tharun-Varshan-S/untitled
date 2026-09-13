@@ -20,8 +20,13 @@ const mapLog = (doc: { _id: any; projectId: any; level: LogLevel; message: strin
 /**
  * Ingest a single log entry into LogLens by enqueuing into BullMQ.
  * Returns an asynchronous acknowledgment payload with Job ID.
+ * @param requestId Correlation ID from the originating HTTP request (X-Request-ID)
  */
-export const ingestLog = async (projectId: string, payload: LogRequest): Promise<{ status: string; jobId: string; projectId: string }> => {
+export const ingestLog = async (
+  projectId: string,
+  payload: LogRequest,
+  requestId?: string
+): Promise<{ status: string; jobId: string; projectId: string }> => {
   const jobData: LogIngestionJobData = {
     projectId,
     level: payload.level,
@@ -29,6 +34,7 @@ export const ingestLog = async (projectId: string, payload: LogRequest): Promise
     service: payload.service ?? 'default',
     timestamp: payload.timestamp ? new Date(payload.timestamp).toISOString() : new Date().toISOString(),
     ...(payload.metadata ? { metadata: payload.metadata } : {}),
+    ...(requestId ? { requestId } : {}),
   };
 
   const job = await addLogJob(jobData);
@@ -42,8 +48,13 @@ export const ingestLog = async (projectId: string, payload: LogRequest): Promise
 
 /**
  * Bulk ingest log entries into LogLens by enqueuing batch into BullMQ via addBulk().
+ * @param requestId Correlation ID from the originating HTTP request (X-Request-ID)
  */
-export const bulkIngestLogs = async (projectId: string, payload: LogRequest[]): Promise<{ status: string; enqueuedCount: number; projectId: string }> => {
+export const bulkIngestLogs = async (
+  projectId: string,
+  payload: LogRequest[],
+  requestId?: string
+): Promise<{ status: string; enqueuedCount: number; projectId: string }> => {
   if (payload.length === 0) {
     throw new AppError('No logs to insert', 400, 'LOG_BULK_EMPTY');
   }
@@ -55,6 +66,7 @@ export const bulkIngestLogs = async (projectId: string, payload: LogRequest[]): 
     service: item.service ?? 'default',
     timestamp: item.timestamp ? new Date(item.timestamp).toISOString() : new Date().toISOString(),
     ...(item.metadata ? { metadata: item.metadata } : {}),
+    ...(requestId ? { requestId } : {}),
   }));
 
   const enqueuedJobs = await addLogBatchJob(jobItems);

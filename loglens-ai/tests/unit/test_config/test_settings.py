@@ -7,12 +7,12 @@ from app.config.settings import Settings
 
 def test_settings_default_values():
     """Verify default setting values meet project specifications."""
-    s = Settings(GROQ_API_KEY="test_key")
+    s = Settings(GROQ_API_KEY="test_key", SERVICE_KEY="test_service_key")
     assert s.MODEL == "llama-3.3-70b-versatile"
     assert s.TEMPERATURE == 0.2
     assert s.MAX_TOKENS == 2048
     assert s.TIMEOUT == 30.0
-    assert s.SERVICE_KEY == "loglens-internal-secret-key"
+    assert s.SERVICE_KEY == "test_service_key"
 
 
 def test_settings_environment_override(monkeypatch):
@@ -20,6 +20,7 @@ def test_settings_environment_override(monkeypatch):
     monkeypatch.setenv("MODEL", "llama-3.1-8b-instant")
     monkeypatch.setenv("SERVICE_KEY", "custom-secret-key")
     monkeypatch.setenv("TEMPERATURE", "0.5")
+    monkeypatch.setenv("GROQ_API_KEY", "test_key")
 
     s = Settings()
     assert s.MODEL == "llama-3.1-8b-instant"
