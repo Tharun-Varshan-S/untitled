@@ -31,10 +31,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Run security audit
         working-directory: ./frontend
-        # Using --audit-level=critical because the remaining high-severity findings
-        # (postcss, sharp, undici) are locked inside Next.js transitive dependencies.
-        # They cannot be patched without a breaking Next.js major upgrade.
-        # Backend audit below uses --audit-level=high since we own that dep tree.
+        # Next.js is upgraded to patch the critical CVE, but remaining high-severity
+        # transitive findings cannot be auto-fixed due to an npm package-lock bug.
         run: npm audit --audit-level=critical
       - name: Run tests
         working-directory: ./frontend
