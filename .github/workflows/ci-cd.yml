@@ -217,4 +217,5 @@ jobs:
             fi
             
             cd ${{ vars.PROD_PROJECT_PATH }}
+            git pull origin main
             bash ./scripts/deploy.sh ${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }} ${{ secrets.DOCKERHUB_TOKEN }}
