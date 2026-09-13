@@ -37,7 +37,7 @@ export default function RootPage() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[hsl(var(--success))] opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[hsl(var(--success))]"></span>
           </span>
-          Loglens v2.0 is now live
+          Loglens v2.0 is now live! (Automated CI/CD Test)
         </div>
         
         <h1 className="text-display max-w-4xl mx-auto mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--text-primary))] to-[hsl(var(--text-muted))] pb-1">
