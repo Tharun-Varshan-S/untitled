@@ -19,6 +19,8 @@ from app.core.exceptions import setup_exception_handlers
 from app.api.health import router as health_router
 from app.api.chat import router as chat_router
 from app.api.analysis import router as analysis_router
+from app.api.anomaly import router as anomaly_router
+from app.api.investigation import router as investigation_router
 
 # Initialize structured logging
 setup_logging(settings.LOG_LEVEL)
@@ -51,12 +53,27 @@ def create_app() -> FastAPI:
     )
 
     # Configure CORS Middleware
+    # Origins must be configured explicitly in production via ALLOWED_ORIGINS env var.
+    # Never use ['*'] in production — it allows any origin to make authenticated requests.
+    import os
+    raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+    if raw_origins.strip():
+        allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    else:
+        # Development fallback — restrict to localhost
+        allowed_origins = [
+            "http://localhost:3000",
+            "http://localhost:4000",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:4000",
+        ]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-Service-Key", "X-Request-ID"],
     )
 
     # Configure Custom Request Logging Middleware
@@ -69,6 +86,8 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(chat_router)
     app.include_router(analysis_router)
+    app.include_router(anomaly_router)
+    app.include_router(investigation_router)
 
     return app
 

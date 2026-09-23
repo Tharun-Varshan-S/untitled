@@ -1,203 +1,129 @@
-import { aiService, aiClient } from '../../services/aiService';
-import { groqConfig } from '../../config/groq';
+/**
+ * aiService.test.ts
+ *
+ * Tests for aiService, which delegates AI inference to the loglens-ai
+ * Python microservice via axios HTTP. The Groq SDK is NOT used directly
+ * in the Node.js backend — it lives in the Python service.
+ *
+ * Tests verify:
+ * 1. analyzeLog calls the correct endpoint with the correct payload/headers
+ * 2. Response is serialized as JSON string
+ * 3. Errors are propagated correctly
+ * 4. Timeout is respected
+ */
 
-// Mock the Groq SDK
-jest.mock('groq-sdk', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      chat: {
-        completions: {
-          create: jest.fn(),
-        },
-      },
-    };
-  });
-});
+import axios from 'axios';
+import { aiService } from '../../services/aiService';
 
-describe('AI Service', () => {
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+const WORKSPACE_ID = 'ws-123';
+const PROJECT_ID = 'proj-456';
+const LOG_STRING = '[ERROR] Database connection failed after 3 retries';
+
+describe('AI Service (HTTP proxy to loglens-ai)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('aiClient Initialization', () => {
-    it('should be a singleton instance (same reference)', () => {
-      // 1. Singleton instance check
-      const client1 = aiClient;
-      const client2 = aiClient;
-      expect(client1).toBe(client2);
-    });
-  });
-
-  describe('generateCompletion', () => {
-    it('should call Groq with the correct default parameters (json_object format)', async () => {
-      // 2. Default parameters
-      const mockCreate = (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({
-        choices: [{ message: { content: '{"status":"ok"}' } }],
+  describe('analyzeLog', () => {
+    it('1. should POST to the /analyze endpoint on the AI service URL', async () => {
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { success: true, summary: 'DB outage', rootCause: 'Connection timeout' },
       });
 
-      const messages = [{ role: 'user', content: 'test log' }];
-      const result = await aiService.generateCompletion(messages);
+      await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING);
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        model: groqConfig.model,
-        messages,
-        response_format: { type: 'json_object' },
-        temperature: 0.1,
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        expect.stringContaining('/analyze'),
+        expect.objectContaining({
+          workspaceId: WORKSPACE_ID,
+          projectId: PROJECT_ID,
+          logs: [LOG_STRING],
+        }),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+          }),
+        })
+      );
+    });
+
+    it('2. should include the X-Service-Key header for internal auth', async () => {
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { success: true, summary: 'ok' },
       });
-      expect(result).toBe('{"status":"ok"}');
+
+      await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Object),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Service-Key': expect.any(String),
+          }),
+        })
+      );
     });
 
-    it('should call Groq with text format if provided', async () => {
-      // 3. Custom format override
-      const mockCreate = (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({
-        choices: [{ message: { content: 'text response' } }],
-      });
+    it('3. should return the response body serialized as a JSON string', async () => {
+      const responseData = { success: true, summary: 'Memory leak detected', rootCause: 'Unclosed stream' };
+      mockedAxios.post.mockResolvedValueOnce({ data: responseData });
 
-      const messages = [{ role: 'user', content: 'hello' }];
-      await aiService.generateCompletion(messages, { type: 'text' });
+      const result = await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING);
 
-      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
-        response_format: { type: 'text' },
-      }));
+      expect(result).toBe(JSON.stringify(responseData));
     });
 
-    it('should return "{}" if the response choices are empty', async () => {
-      // 4. Empty choices array
-      (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({ choices: [] });
-      const result = await aiService.generateCompletion([]);
-      expect(result).toBe('{}');
+    it('4. should set a 30-second timeout on the request', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: {} });
+
+      await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Object),
+        expect.objectContaining({ timeout: 30000 })
+      );
     });
 
-    it('should return "{}" if the message is undefined', async () => {
-      // 5. Undefined message
-      (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({ choices: [{ message: undefined }] });
-      const result = await aiService.generateCompletion([]);
-      expect(result).toBe('{}');
+    it('5. should propagate axios errors (network failure, 5xx)', async () => {
+      const networkError = new Error('connect ECONNREFUSED 127.0.0.1:8000');
+      mockedAxios.post.mockRejectedValueOnce(networkError);
+
+      await expect(aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING))
+        .rejects.toThrow('connect ECONNREFUSED');
     });
 
-    it('should return "{}" if the content is null', async () => {
-      // 6. Null content
-      (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({ choices: [{ message: { content: null } }] });
-      const result = await aiService.generateCompletion([]);
-      expect(result).toBe('{}');
+    it('6. should send log as an array (API contract)', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: {} });
+
+      await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING);
+
+      const callArgs = mockedAxios.post.mock.calls[0];
+      const body = callArgs?.[1] as { logs: unknown };
+      expect(Array.isArray(body?.logs)).toBe(true);
+      expect(body?.logs).toHaveLength(1);
     });
 
-    it('should handle string responses properly', async () => {
-      // 7. Normal string parsing check
-      (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({ choices: [{ message: { content: 'hello world' } }] });
-      const result = await aiService.generateCompletion([]);
-      expect(result).toBe('hello world');
+    it('7. should work with empty log string', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: { success: true } });
+
+      const result = await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, '');
+
+      expect(typeof result).toBe('string');
     });
 
-    it('should propagate errors from the Groq client', async () => {
-      // 8. Error propagation
-      const error = new Error('API Rate Limit Exceeded');
-      (aiClient.chat.completions.create as jest.Mock).mockRejectedValueOnce(error);
-      
-      await expect(aiService.generateCompletion([])).rejects.toThrow('API Rate Limit Exceeded');
+    it('8. should handle AI service returning success:false without throwing', async () => {
+      const failureResponse = { success: false, error: 'Model rate limited' };
+      mockedAxios.post.mockResolvedValueOnce({ data: failureResponse });
+
+      const result = await aiService.analyzeLog(WORKSPACE_ID, PROJECT_ID, LOG_STRING);
+
+      // The Node.js service delegates error handling to the caller
+      expect(result).toBe(JSON.stringify(failureResponse));
     });
-  });
-});
-
-describe('AI Service Initialization Edge Cases', () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
-  });
-
-  it('should initialize with correct API key', () => {
-    // 9. API Key configuration check
-    process.env.GROQ_API_KEY = 'test_key_123';
-    jest.mock('../../config/groq', () => ({
-      groqConfig: { apiKey: 'test_key_123', maxRetries: 3, timeoutMs: 15000, model: 'test-model' }
-    }));
-    
-    const GroqMock = require('groq-sdk');
-    require('../../services/aiService');
-    
-    expect(GroqMock).toHaveBeenCalledWith(expect.objectContaining({
-      apiKey: 'test_key_123'
-    }));
-  });
-
-  it('should initialize with correct retry configuration', () => {
-    // 10. Retry configuration check
-    jest.mock('../../config/groq', () => ({
-      groqConfig: { apiKey: 'key', maxRetries: 5, timeoutMs: 15000, model: 'test-model' }
-    }));
-    const GroqMock = require('groq-sdk');
-    require('../../services/aiService');
-    expect(GroqMock).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 5 }));
-  });
-
-  it('should initialize with correct timeout configuration', () => {
-    // 11. Timeout configuration check
-    jest.mock('../../config/groq', () => ({
-      groqConfig: { apiKey: 'key', maxRetries: 3, timeoutMs: 9999, model: 'test-model' }
-    }));
-    const GroqMock = require('groq-sdk');
-    require('../../services/aiService');
-    expect(GroqMock).toHaveBeenCalledWith(expect.objectContaining({ timeout: 9999 }));
-  });
-
-  it('should handle initialization when config is malformed', () => {
-    // 12. Malformed config
-    jest.mock('../../config/groq', () => ({
-      groqConfig: { apiKey: '', maxRetries: 0, timeoutMs: 0, model: '' }
-    }));
-    const GroqMock = require('groq-sdk');
-    require('../../services/aiService');
-    expect(GroqMock).toHaveBeenCalledWith(expect.objectContaining({ apiKey: '', maxRetries: 0, timeout: 0 }));
-  });
-
-  it('should process multi-message conversation arrays', async () => {
-    // 13. Multiple messages
-    const { aiService, aiClient } = require('../../services/aiService');
-    (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({
-      choices: [{ message: { content: 'response' } }],
-    });
-
-    const messages = [
-      { role: 'system', content: 'sys' },
-      { role: 'user', content: 'usr' },
-      { role: 'assistant', content: 'ast' }
-    ];
-    await aiService.generateCompletion(messages);
-
-    expect(aiClient.chat.completions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ messages })
-    );
-  });
-
-  it('should send the correct low temperature setting for determinism', async () => {
-    // 14. Determinism check
-    const { aiService, aiClient } = require('../../services/aiService');
-    (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({ choices: [] });
-    
-    await aiService.generateCompletion([]);
-    expect(aiClient.chat.completions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ temperature: 0.1 })
-    );
-  });
-
-  it('should use the globally configured model name', async () => {
-    // 15. Model configuration check
-    jest.mock('../../config/groq', () => ({
-      groqConfig: { apiKey: 'key', maxRetries: 3, timeoutMs: 9999, model: 'super-fast-llama' }
-    }));
-    
-    const { aiService, aiClient } = require('../../services/aiService');
-    (aiClient.chat.completions.create as jest.Mock).mockResolvedValueOnce({ choices: [] });
-    
-    await aiService.generateCompletion([]);
-    expect(aiClient.chat.completions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'super-fast-llama' })
-    );
   });
 });

@@ -63,6 +63,20 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 5
+          --health-start-period 30s
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms256m -Xmx256m"
     env:
       REDIS_URL: redis://localhost:6379
       NODE_ENV: test
@@ -70,6 +84,9 @@ jobs:
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
       MONGODB_URI: mongodb://localhost:27017/ci-dummy
+      ELASTICSEARCH_URL: http://localhost:9200
+      # Suppress OTel telemetry in CI — no OTLP collector available
+      OTEL_SDK_DISABLED: "true"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -89,9 +106,13 @@ jobs:
       - name: Run type-check
         working-directory: ./backend
         run: npx tsc --noEmit
-      - name: Run tests
+      - name: Run unit tests (no live services required)
         working-directory: ./backend
-        run: npm test
+        run: npm test -- --testPathIgnorePatterns="integration" --forceExit
+      - name: Run integration tests (Redis + MongoDB + ES required)
+        working-directory: ./backend
+        run: npm test -- --testPathPatterns="integration" --forceExit --testTimeout=180000
+        continue-on-error: false
       - name: Build
         working-directory: ./backend
         run: npm run build
@@ -118,6 +139,20 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 5
+          --health-start-period 30s
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms256m -Xmx256m"
     env:
       REDIS_URL: redis://localhost:6379
       NODE_ENV: test
@@ -125,6 +160,8 @@ jobs:
       GROQ_API_KEY: ci-dummy-groq-key
       SERVICE_KEY: ci-dummy-service-key
       MONGODB_URI: mongodb://localhost:27017/ci-dummy
+      ELASTICSEARCH_URL: http://localhost:9200
+      OTEL_SDK_DISABLED: "true"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -138,9 +175,13 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: npm ci
-      - name: Run worker tests
+      - name: Run worker unit tests
         working-directory: ./backend
-        run: npx jest src/__tests__/ai-pipeline/worker.test.ts src/__tests__/delayedJobs.integration.test.ts src/__tests__/repeatableJobs.integration.test.ts src/__tests__/scalingWorkers.integration.test.ts --runInBand
+        run: npx jest src/__tests__/ai-pipeline/worker.test.ts --runInBand --forceExit
+      - name: Run BullMQ integration tests
+        working-directory: ./backend
+        run: npx jest src/__tests__/delayedJobs.integration.test.ts src/__tests__/repeatableJobs.integration.test.ts src/__tests__/scalingWorkers.integration.test.ts --runInBand --forceExit --testTimeout=180000
+        continue-on-error: false
 
   test-ai-service:
     name: AI Service CI
@@ -160,12 +201,14 @@ jobs:
         working-directory: ./loglens-ai
         run: pip install pip-audit && pip-audit -r requirements.txt --severity high
         continue-on-error: true
-      - name: Run tests
+      - name: Run unit tests (no live services — includes IsolationForest ML evaluation)
         working-directory: ./loglens-ai
         env:
           PYTHONPATH: .
           SERVICE_KEY: ci-dummy-service-key
-        run: pytest
+          GROQ_API_KEY: ci-dummy-groq-key
+          ML_ANOMALY_THRESHOLD: "0.63"
+        run: pytest tests/unit/ -v --tb=short
 
   build-docker:
     name: Build Docker Images

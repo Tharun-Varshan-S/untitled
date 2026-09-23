@@ -1,9 +1,13 @@
+// OTel MUST be imported before all other modules — it monkey-patches require()
+import './tracing';
+
 import http from 'http';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 import app from './app';
 import { connectDB, disconnectDB } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
+import { connectElasticsearch, disconnectElasticsearch } from './config/elasticsearch';
 import { initializeSocket, closeSocket } from './socket';
 import { createLogWorker } from './jobs/log.worker';
 
@@ -16,6 +20,9 @@ const startServer = async (): Promise<http.Server> => {
   }
 
   await connectRedis();
+
+  // Connect Elasticsearch (non-fatal — degrades gracefully to MongoDB search)
+  await connectElasticsearch();
 
   // Instantiate embedded worker for zero-config queue processing
   if (process.env.DISABLE_EMBEDDED_WORKER !== 'true') {
@@ -55,6 +62,12 @@ const startServer = async (): Promise<http.Server> => {
           await disconnectRedis();
         } catch (redisError) {
           logger.error(`Error disconnecting Redis: ${redisError instanceof Error ? redisError.message : String(redisError)}`);
+        }
+
+        try {
+          await disconnectElasticsearch();
+        } catch (esError) {
+          logger.error(`Error disconnecting Elasticsearch: ${esError instanceof Error ? esError.message : String(esError)}`);
         }
 
         process.exit(0);

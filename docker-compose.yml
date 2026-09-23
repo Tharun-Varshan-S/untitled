@@ -5,8 +5,7 @@ services:
     image: redis:7-alpine
     container_name: loglens-redis
     restart: unless-stopped
-    # Exposing the port only internally or securely. Usually we don't expose it to the host in prod.
-    # We remove ports: - '6379:6379'
+    # Not exposing to host in production
     volumes:
       - redis_data:/data
     healthcheck:
@@ -14,6 +13,31 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: loglens-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      # Security disabled for local development — enable xpack.security.enabled=true for production
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:9200/_cluster/health || exit 1']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   backend:
     image: ${DOCKERHUB_USERNAME:-local}/loglens-backend:${IMAGE_TAG:-latest}
@@ -35,11 +59,13 @@ services:
       - BULL_BOARD_USER=${BULL_BOARD_USER:-admin}
       - BULL_BOARD_PASS=${BULL_BOARD_PASS}
       - DISABLE_EMBEDDED_WORKER=true
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     restart: unless-stopped
     depends_on:
       redis:
         condition: service_healthy
-
+      elasticsearch:
+        condition: service_healthy
 
   worker:
     image: ${DOCKERHUB_USERNAME:-local}/loglens-worker:${IMAGE_TAG:-latest}
@@ -56,9 +82,13 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - SERVICE_KEY=${SERVICE_KEY}
       - WORKER_CONCURRENCY=10
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - AI_SERVICE_URL=http://ai-service:8000/api/v1
     restart: unless-stopped
     depends_on:
       redis:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
 
   ai-service:
@@ -67,13 +97,15 @@ services:
       context: ./loglens-ai
       dockerfile: Dockerfile
     container_name: loglens-ai-service
-    # No exposed ports to host, keep it internal to Docker network
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - SERVICE_KEY=${SERVICE_KEY}
       - MODEL=llama-3.3-70b-versatile
       - ENVIRONMENT=production
       - LOG_LEVEL=INFO
+      - ML_MODEL_DIR=/models
+    volumes:
+      - ai_models:/models
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -102,6 +134,42 @@ services:
     depends_on:
       - backend
 
+  # ── Optional: Distributed Tracing (Jaeger) ─────────────────────────────────
+  # Start with: docker compose --profile observability up
+  # Jaeger UI: http://localhost:16686
+  # Backend traces are exported via OTLP HTTP to http://jaeger:4318/v1/traces
+  # Set OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 in .env to enable export.
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: loglens-jaeger
+    profiles:
+      - observability
+    ports:
+      - "127.0.0.1:16686:16686"   # Jaeger UI
+      - "127.0.0.1:4317:4317"     # OTLP gRPC receiver
+      - "127.0.0.1:4318:4318"     # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    volumes:
+      - jaeger_data:/badger
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
 volumes:
   redis_data:
     driver: local
+  es_data:
+    driver: local
+  ai_models:
+    driver: local
+  jaeger_data:
+    driver: local
+

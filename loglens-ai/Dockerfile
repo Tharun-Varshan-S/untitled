@@ -9,18 +9,23 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install curl for health check
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# Install curl + build tools for scikit-learn C extensions
+RUN apt-get update && apt-get install -y --no-install-recommends curl gcc g++ && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency requirements
 COPY requirements.txt .
 
-# Install dependencies
+# Install dependencies (includes scikit-learn, numpy, joblib)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser
+# Create non-root user and ML model persistence directory
+RUN adduser --disabled-password --gecos '' appuser \
+    && mkdir -p /models \
+    && chown -R appuser:appuser /models
 USER appuser
+
+# ML model persistence
+ENV ML_MODEL_DIR=/models
 
 # Copy application source code
 COPY --chown=appuser:appuser app/ ./app/

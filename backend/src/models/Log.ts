@@ -1,8 +1,13 @@
 import { Schema, model, Types, type Document } from 'mongoose';
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'fatal';
+export type NormalizedLevel = 'info' | 'warn' | 'error' | 'debug' | 'fatal';
+export type ErrorCategory = 'database' | 'network' | 'authentication' | 'timeout' | 'validation' | 'permission' | 'unknown';
+export type LogSource = 'sdk' | 'api' | 'upload' | 'unknown';
+export type LogEnvironment = 'production' | 'staging' | 'development' | 'test' | 'unknown';
 
 export interface LogDocument extends Document {
+  // ── Core fields (existing) ──────────────────────────────────────────────────
   workspaceId?: Types.ObjectId;
   projectId: Types.ObjectId;
   level: LogLevel;
@@ -12,12 +17,35 @@ export interface LogDocument extends Document {
   timestamp: Date;
   createdAt: Date;
   updatedAt: Date;
-  
-  // Deduplication hash for AI analysis
+
+  // ── Canonical identification fields (new) ───────────────────────────────────
+  /** Distributed trace identifier for cross-service correlation */
+  traceId?: string;
+  /** Span identifier within a trace */
+  spanId?: string;
+  /** HTTP/application request identifier */
+  requestId?: string;
+  /** Originating host/instance */
+  host?: string;
+  /** Deployment environment (normalized) */
+  environment?: LogEnvironment;
+  /** Log ingestion source */
+  source?: LogSource;
+
+  // ── Deterministic enrichment fields (new) ──────────────────────────────────
+  /** Normalized severity — guaranteed lowercase consistent enum value */
+  normalizedLevel?: NormalizedLevel;
+  /** Stable content fingerprint for deduplication and pattern matching */
+  fingerprint?: string;
+  /** Derived error category from level + message pattern analysis */
+  errorCategory?: ErrorCategory;
+
+  // ── Existing deduplication/analysis fields ──────────────────────────────────
+  /** Structural hash for AI analysis deduplication */
   logHash?: string;
   /** BullMQ Job ID — used for idempotent writes (prevents duplicate docs on job retry) */
   ingestJobId?: string;
-  // Subdocument storing the AI root-cause analysis
+  /** Subdocument storing the AI root-cause analysis */
   aiAnalysis?: {
     summary: string;
     severity: string;
@@ -74,6 +102,51 @@ const logSchema = new Schema<LogDocument>(
       index: true,
       sparse: true,  // Sparse so null/undefined values don't conflict on unique constraint
       unique: true,
+    },
+
+    // ── Canonical identification fields ────────────────────────────────────────
+    traceId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+    spanId: {
+      type: String,
+      sparse: true,
+    },
+    requestId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+    host: {
+      type: String,
+      trim: true,
+    },
+    environment: {
+      type: String,
+      enum: ['production', 'staging', 'development', 'test', 'unknown'],
+    },
+    source: {
+      type: String,
+      enum: ['sdk', 'api', 'upload', 'unknown'],
+    },
+
+    // ── Deterministic enrichment fields ────────────────────────────────────────
+    normalizedLevel: {
+      type: String,
+      enum: ['info', 'warn', 'error', 'debug', 'fatal'],
+      index: true,
+    },
+    fingerprint: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+    errorCategory: {
+      type: String,
+      enum: ['database', 'network', 'authentication', 'timeout', 'validation', 'permission', 'unknown'],
+      sparse: true,
     },
 
     aiAnalysis: {

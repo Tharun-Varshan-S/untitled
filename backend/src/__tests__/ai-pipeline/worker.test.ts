@@ -19,6 +19,10 @@ jest.mock('../../services/analysisStorageService');
 jest.mock('../../socket/broadcast');
 jest.mock('../../socket/analytics');
 jest.mock('../../jobs/log.producer');
+// Mock Elasticsearch so ES indexing in handleSingleLogJob is a no-op in unit tests
+jest.mock('../../services/elasticsearch.service', () => ({
+  indexLog: jest.fn().mockResolvedValue(true),
+}));
 
 // We mock bullmq to avoid actual Redis connections during tests
 jest.mock('bullmq', () => {
@@ -75,6 +79,16 @@ describe('Worker processing logic', () => {
     (LogModel.findOne as jest.Mock).mockReturnValue({
       lean: jest.fn().mockResolvedValue(null),
     });
+
+    // Mock LogModel.find for handleLogCleanupJob batch loop
+    // Returns [] so the while(true) loop exits on first iteration
+    (LogModel.find as jest.Mock).mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockResolvedValue([]),
+    });
+
+    (LogModel.deleteMany as jest.Mock).mockResolvedValue({ deletedCount: 0 });
     
     (LogModel.findById as jest.Mock).mockResolvedValue({
       _id: new Types.ObjectId(),
