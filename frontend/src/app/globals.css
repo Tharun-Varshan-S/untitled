@@ -147,3 +147,18 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--text-muted));
 }
+
+/* Hide third-party browser extension injected floating widgets / overlays */
+body > iframe[style*="fixed"],
+body > div[style*="fixed"][style*="bottom"],
+[id*="extension"],
+[class*="extension"],
+[id*="tuesday"],
+[class*="tuesday"],
+[style*="z-index: 2147483647"],
+[style*="z-index:9999"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
