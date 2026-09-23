@@ -6,7 +6,7 @@
     "moduleResolution": "node16",
     "target": "es2020",
     "lib": ["es2020"],
-    "types": ["node"],
+    "types": ["node", "jest"],
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "sourceMap": true,
     "declaration": true,
@@ -23,6 +23,5 @@
       "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["src/**/*", "../shared/**/*"],
-  "exclude": ["src/__tests__"]
+  "include": ["src/**/*", "../shared/**/*"]
 }
